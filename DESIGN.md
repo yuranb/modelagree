@@ -60,6 +60,12 @@ null with `valid: false` and an error, while their original spelling remains in
 the saved raw response. No missing or invalid field receives a default label or
 becomes valid through coercion or deduplication.
 
+Object extraction starts at the first `{` or `[` marker, which must decode as
+an object. Thus prefixed arrays, including arrays missing a closing bracket,
+cannot supply an inner label object; bracketed prose before an object is also
+rejected. The remaining suffix must contain no `{` or `}`. Other suffix text,
+including `[]` or `true`, is accepted with the `surrounding_text` flag.
+
 **Explicit denominators.** Primary metrics require valid predictions and known
 references for the field. Counts report unknown references, invalid predictions,
 and their overlap. Missing responses and provider errors are invalid predictions.

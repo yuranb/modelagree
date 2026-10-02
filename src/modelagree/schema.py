@@ -78,14 +78,14 @@ def parse_response(raw, schema):
             error = "expected one JSON object"
             obj = None
     except (ValueError, json.JSONDecodeError) as exc:
-        # Do not salvage ambiguous, malformed JSON or a nested object from it.
+        # Start at the first container so arrays cannot yield an inner object.
         # Prose around one balanced object is accepted but explicitly flagged.
         if isinstance(exc, DuplicateKey):
             error = str(exc)
         elif text.startswith("["):
             error = "malformed or multiple JSON values"
         else:
-            start = text.find("{")
+            start = min((i for i in (text.find("{"), text.find("[")) if i >= 0), default=-1)
             try:
                 candidate, end = decoder.raw_decode(text, start)
                 if not isinstance(candidate, dict) or "{" in text[end:] or "}" in text[end:]:

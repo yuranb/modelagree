@@ -26,6 +26,15 @@ def test_invalid_json_never_defaults(text):
     assert 'invalid_json' in parsed['format_violations']
 
 
+@pytest.mark.parametrize('text', ['Here: [' + VALID, 'Here: [' + VALID + ']',
+                                  '[answer] ' + VALID])
+def test_leading_array_marker_cannot_salvage_an_object(text):
+    parsed = parse_response(text, SCHEMA)
+    assert 'invalid_json' in parsed['format_violations']
+    assert all(not field['valid'] and field['value'] is None
+               for field in parsed['fields'].values())
+
+
 @pytest.mark.parametrize('text,violation', [(VALID,None), ('```json\n'+VALID+'\n```','markdown_fence'),
                                           ('```\n'+VALID+'\n```','markdown_fence'),
                                           ('Here: '+VALID, 'surrounding_text'),
