@@ -16,6 +16,8 @@ def validate_schema(schema):
         if spec.get("type") not in TYPES:
             raise ValueError(f"Unknown task type for {name}")
         key = "levels" if spec["type"] == "ordinal" else "labels"
+        if set(spec) - {"type", key}:
+            raise ValueError("Unsupported schema keys; use only type and its vocabulary")
         labels = spec.get(key)
         if (not isinstance(labels, list) or not labels
                 or any(not isinstance(x, str) or not x for x in labels)

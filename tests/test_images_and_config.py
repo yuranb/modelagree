@@ -66,6 +66,19 @@ def test_keys_rejected_in_config_and_scrubbed_from_cli(config_factory,monkeypatc
     with pytest.raises(ValueError,match='environment'): load_config(cfg)
 
 
+@pytest.mark.parametrize('kind', ['categorical', 'ordinal', 'multi_label'])
+@pytest.mark.parametrize('extra', ['api_key', 'lables', 'wrong_vocabulary'])
+def test_unknown_schema_options_rejected_before_persistence(config_factory, kind, extra):
+    vocabulary = 'levels' if kind == 'ordinal' else 'labels'
+    unknown = ('labels' if kind == 'ordinal' else 'levels') if extra == 'wrong_vocabulary' else extra
+    spec = {'type': kind, vocabulary: ['a', 'b'], unknown: 'dummy-schema-credential'}
+    cfg = config_factory(schema={'label': spec})
+    with pytest.raises(ValueError, match='Unsupported schema keys') as exc:
+        run(cfg)
+    assert 'dummy-schema-credential' not in str(exc.value)
+    assert not (cfg.parent / 'run').exists()
+
+
 def test_placeholder_prevents_http(config_factory):
     cfg=config_factory(models=[{'id':'m','provider':'gemini','model':'REPLACE_WITH_GEMINI_MODEL_ID'}])
     with pytest.raises(ValueError,match='placeholder'): run(cfg)
