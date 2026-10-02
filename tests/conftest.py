@@ -21,3 +21,17 @@ def config_factory(tmp_path):
         path.write_text(yaml.safe_dump(cfg))
         return path
     return make
+
+
+@pytest.fixture(autouse=True)
+def no_real_keys(monkeypatch):
+    monkeypatch.delenv('OPENAI_API_KEY',raising=False)
+    monkeypatch.delenv('GEMINI_API_KEY',raising=False)
+
+
+@pytest.fixture
+def tiny_image(tmp_path):
+    import base64
+    path=tmp_path/'pixel.png'
+    path.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWZkAAAAASUVORK5CYII='))
+    return path

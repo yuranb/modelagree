@@ -1,0 +1,26 @@
+# First run scripts/prepare_crisismmd.py on your locally downloaded v2.0 copy.
+# The default converter uses image informativeness and image damage labels.
+dataset: ../data/crisismmd/items.jsonl
+prompt: crisismmd-prompt.txt
+run_dir: ../runs/crisismmd
+retry_attempts: 3
+label_schema:
+  informativeness:
+    type: categorical
+    labels: [informative, not_informative]
+  damage_severity:
+    type: ordinal
+    levels: [little_or_no_damage, mild_damage, severe_damage]
+models:
+  - id: gemini
+    provider: gemini
+    model: REPLACE_WITH_GEMINI_MODEL_ID
+    timeout_seconds: 60
+    parameters:
+      max_output_tokens: 1024
+  - id: openai
+    provider: openai
+    model: REPLACE_WITH_OPENAI_MODEL_ID
+    timeout_seconds: 60
+    parameters:
+      max_output_tokens: 1024

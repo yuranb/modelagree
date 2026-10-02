@@ -11,3 +11,7 @@ runs/
 data/crisismmd/
 CrisisMMD*/
 .DS_Store
+crisismmd*/
+data_image/
+CrisisMMD*.tar*
+crisismmd*.zip

@@ -93,3 +93,44 @@ versions and Docker runs the same offline demo.
 **Deliberate scope.** Local files and a synchronous CLI are sufficient for small
 auditable runs. Databases, accounts, web frontends, and job queues would add
 operational overhead without advancing this tool's purpose.
+
+**Real providers without SDKs.** Standard-library HTTPS implements the OpenAI
+Responses and Gemini generateContent APIs. A small documented parameter allowlist
+prevents accidental prompt/model overrides and invalid credential fields. Provider
+payloads preserve the same prompt and item text; the label schema validates output
+locally rather than silently enabling different schema-enforcement modes per model.
+Saved HTTP bodies retain provider finish metadata and usage for later audits.
+
+**Environment-only credentials.** Only `OPENAI_API_KEY` and `GEMINI_API_KEY` provide
+authentication. They are read at request time and never serialized in headers,
+configs, or error records. Fixed HTTPS endpoints and rejected redirects prevent
+forwarding credentials elsewhere. Successful responses are scrubbed for literal
+environment keys before persistence; this narrow exception to exact raw retention
+is necessary to honor the no-key-on-disk rule. No `.env` loader is included.
+
+**Image evidence.** Dataset-relative local image paths resolve independently of
+the config location. Fingerprints and per-run image snapshots prevent a changed
+file from silently altering a resumed comparison. JPEG, PNG, and WebP are sent
+inline, with a conservative 10 MiB cap to bound memory and encoded request size.
+Missing or changed images fail explicitly instead of degrading into text-only
+evaluation. Scoring works from saved records without original images.
+
+**Limited runs.** `--limit` freezes the first N nonblank dataset records before
+loading images; the limit belongs to the run fingerprint. Different limits require
+separate output directories, so a quick trial cannot silently change a completed
+run's denominator. Dataset ordering remains deterministic and visible.
+
+**CrisisMMD conversion and reference policy.** The standalone script reads a
+locally extracted v2.0 copy, original event TSV annotations, and local images. It
+does not download or bundle any dataset content. Image informativeness is the
+default reference to align with image damage severity; explicit text/agreed modes
+record their policy and preserve original labels. No missing severity annotation
+is mapped to the lowest level. Per-image IDs avoid collapsing multiple images
+from one tweet, and the script does not claim official split membership.
+
+**Converter integrity and provider tests.** Conversion rejects conflicting duplicate
+IDs, malformed tables, escaping image paths, and missing images unless explicitly
+asked to skip and count missing files. Atomic output avoids half-converted datasets.
+Mocked HTTP tests cover both providers, local-image encoding, usage, refusals,
+malformed responses, transient/permanent failures, and secret redaction, with
+sockets disabled throughout. No validation requires live provider access.

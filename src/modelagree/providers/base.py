@@ -9,6 +9,8 @@ class Response:
     output_tokens: int | None = None
     total_tokens: int | None = None
     latency_seconds: float | None = None
+    raw_http_response: str | None = None
+    api_request: dict | None = None
 
 
 class ProviderError(Exception):

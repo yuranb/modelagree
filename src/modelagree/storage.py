@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import digest
+from .security import redact
 
 
 def utc_now():
@@ -22,7 +23,7 @@ def write_json(path, data):
     fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(data, handle, indent=2, ensure_ascii=False, allow_nan=False)
+            handle.write(redact(json.dumps(data, indent=2, ensure_ascii=False, allow_nan=False)))
             handle.write("\n")
             handle.flush()
             os.fsync(handle.fileno())

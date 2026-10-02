@@ -2,14 +2,15 @@ import time
 from dataclasses import asdict
 
 from .config import digest, load_config
+from .images import snapshot_image
 from .providers import create_provider
 from .providers.base import ProviderError
 from .schema import parse_response
 from .storage import read_json, response_path, run_lock, utc_now, write_json
 
 
-def run(config_path):
-    frozen, run_dir = load_config(config_path)
+def run(config_path, limit=None):
+    frozen, run_dir = load_config(config_path, limit=limit)
     with run_lock(run_dir):
         manifest_path = run_dir / "manifest.json"
         fingerprint = digest(frozen)
@@ -20,15 +21,19 @@ def run(config_path):
         else:
             write_json(manifest_path, {**frozen, "fingerprint": fingerprint, "created_at": utc_now()})
         for model_id, model in frozen["models"].items():
-            provider = create_provider(model)
+            provider = None
             for item in frozen["items"]:
                 path = response_path(run_dir, model_id, item["id"])
                 previous = read_json(path) if path.exists() else {}
                 if previous.get("status") in {"completed", "permanent_error"}:
                     continue
+                if provider is None:
+                    provider = create_provider(model)
                 request = {"model_id": model_id, "provider": model["provider"], "model": model["model"],
                            "parameters": model["parameters"], "prompt": frozen["prompt"],
                            "item_id": item["id"], "text": item["text"], "label_schema": frozen["label_schema"]}
+                if item.get("image"):
+                    request["image"] = snapshot_image(item["image"], run_dir)
                 record = {"model_id": model_id, "item_id": item["id"], "request": request,
                           "attempts": previous.get("attempts", []), "raw_response": None,
                           "parsed": None, "usage": None, "latency_seconds": None}
@@ -52,6 +57,7 @@ def run(config_path):
                     finished_at = utc_now()
                     values = asdict(response)
                     record.update(status="completed", raw_response=response.text,
+                                  raw_http_response=response.raw_http_response, api_request=response.api_request,
                                   started_at=started_at, finished_at=finished_at,
                                   latency_seconds=response.latency_seconds if response.latency_seconds is not None else elapsed,
                                   usage={k: values[k] for k in ("input_tokens", "output_tokens", "total_tokens")},

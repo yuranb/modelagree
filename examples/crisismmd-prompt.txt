@@ -1,0 +1,5 @@
+Assess the supplied image for disaster response. The accompanying text is context; base both labels on the image itself.
+Return exactly one JSON object with these two fields and no Markdown or explanation:
+- "informativeness": "informative" if the image conveys information useful to disaster responders (such as affected people, rescue activity, damaged infrastructure, hazards, or a relevant map); otherwise "not_informative".
+- "damage_severity": "little_or_no_damage", "mild_damage", or "severe_damage", in increasing order of visible physical damage to infrastructure.
+Choose labels based only on the supplied evidence.

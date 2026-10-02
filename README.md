@@ -70,10 +70,24 @@ models:
 | `levels` | Distinct strings, ordered lowest to highest, for ordinal tasks. |
 | `models` | Nonempty list of model definitions. |
 | `id` | Unique local evaluation ID; all comparisons and storage use it, never list positions. |
-| `provider` | `mock` for canned offline responses. |
+| `provider` | `mock`, `openai` (Responses API), or `gemini` (generateContent API). |
 | `model` | Provider model ID; separate from the local evaluation ID. |
 | `parameters` | Provider options; the mock provider accepts an empty mapping. |
 | `responses` | Mock-only JSON file mapping item IDs to response strings or objects with `text`, optional `input_tokens`, `output_tokens`, `total_tokens`. |
+
+`timeout_seconds` is an optional positive model-level request timeout (default
+60). Supported options in `parameters` are:
+
+| Provider | Parameters |
+| --- | --- |
+| `openai` | `temperature`, `top_p`, `max_output_tokens`, `reasoning_effort` |
+| `gemini` | `temperature`, `top_p`, `top_k`, `max_output_tokens`, `seed` |
+
+Omitted parameters use provider defaults; model-specific support still applies.
+`reasoning_effort` accepts `none`, `minimal`, `low`, `medium`, `high`, or `xhigh`;
+choose a value supported by your model. Temperature must be in [0, 2], top-p in
+[0, 1], seed a nonnegative integer, and token/top-k limits positive integers.
+Unknown options are rejected to catch typos and keep credentials out of config.
 
 Dataset example:
 
@@ -87,6 +101,18 @@ for that field. Empty multi-label lists are valid. Duplicate labels in a set,
 unknown labels, wrong types, and missing fields are invalid predictions; there
 are no default labels or coercions.
 
+An item may also have `"image":"images/example.jpg"`, resolved relative to the
+dataset file (not the YAML). Local JPEG, PNG, and WebP images up to 10 MiB are
+supported. Each selected image is fingerprinted, snapshotted under the run's
+`images/` directory when requested, and sent inline. Image bytes are checked
+against their fingerprint before sending. Keep the original inputs available
+when resuming; scoring and reporting only need the run directory.
+
+`modelagree run CONFIG --limit N` selects the first N nonblank JSONL records
+before image loading. The limit is part of the frozen run definition: resume
+with the same limit, and use a new `run_dir` for a different limit or an unlimited
+run. No labels are used for selection and item order is not randomized.
+
 ## Output and resumption
 
 `manifest.json` freezes the prompt, schema, items, model definitions, retry
@@ -96,6 +122,9 @@ requires a new `run_dir`; reordering model definitions does not. Under
 IDs, the request, raw response text, parse results, UTC timestamps, measured
 latency, available token counts, and attempt history. Hashes make arbitrary
 IDs safe as filenames. The request never contains reference labels.
+For real providers, records also retain the exact HTTP request body and raw
+HTTP response body, including refusals, truncation metadata, and responses with
+no generated text. Authentication headers are never stored.
 
 Completed responses—including empty, malformed, or invalid model output—are
 never overwritten or requested again. Permanent provider failures are also
@@ -142,12 +171,76 @@ violations, status counts, latency totals, and token totals. Every resource tota
 states how many measurements were available. Failed-request token costs are
 usually unknown; attempt latency includes those failures.
 
-## Development and Docker
+## Development
 
 `python -m pytest` runs all tests with networking blocked by `pytest-socket`.
 GitHub Actions runs them on Python 3.10, 3.12, and 3.14 for pushes and PRs.
 Runtime dependencies are limited to PyYAML; metrics and reporting use the
 standard library.
+
+## Real providers and CrisisMMD
+
+No real API calls are made by the tests or the demo. Before choosing real models,
+set `GEMINI_API_KEY` and/or `OPENAI_API_KEY` in your process environment. Keys are
+never accepted in YAML, `.env` is ignored by Git, and the program does not load
+`.env` files. Authentication goes only in HTTP headers to fixed provider endpoints;
+redirects are rejected. Error records contain fixed error codes, not HTTP error
+bodies or exception details. If a successful response echoes an environment key,
+that literal value is replaced with `[REDACTED_API_KEY]` before parsing or saving;
+credential protection is the one exception to byte-for-byte raw text retention.
+
+Only timeouts, connection failures, HTTP 408/429, and HTTP 5xx are retried.
+TLS verification failures and other HTTP errors are permanent. HTTP 200 with
+unusable, missing, refused, or malformed model output is saved once and scored
+as invalid where applicable. The transport uses normal TLS verification and
+supports the standard `SSL_CERT_FILE` mechanism if your system needs a custom
+trust store. It never disables certificate checks.
+
+Gemini's `output_tokens` records `candidatesTokenCount`; `total_tokens` records
+`totalTokenCount`, which can include thinking tokens, so input plus output need
+not equal total. The original usage metadata remains in the saved HTTP body.
+The adapters follow the official [OpenAI Responses reference](https://developers.openai.com/api/reference/cli/resources/responses/methods/create),
+[OpenAI image-input guide](https://developers.openai.com/api/docs/guides/images-vision),
+and [Gemini generateContent reference](https://ai.google.dev/api/generate-content).
+
+Obtain and extract [CrisisMMD v2.0](https://crisisnlp.qcri.org/crisismmd) yourself.
+The converter only reads your local copy; it never downloads data. Put the
+extracted `CrisisMMD_v2.0/` directory under `data/crisismmd/` or keep it outside
+this repository. These data paths and generated runs are ignored by Git.
+
+```sh
+python scripts/prepare_crisismmd.py /absolute/path/to/CrisisMMD_v2.0
+# Edit examples/crisismmd.yaml: replace both provider model placeholders.
+# Set the two API-key environment variables using your preferred secret manager.
+modelagree run examples/crisismmd.yaml --limit 12
+modelagree report runs/crisismmd
+```
+
+The conversion writes `data/crisismmd/items.jsonl` by default; override it with
+`--output PATH`. It reads the original `annotations/*.tsv` tables, resolves
+local images under the dataset's `data_image/` directory, and emits one item per
+image ID with both tasks:
+
+- `informativeness`: `informative` or `not_informative`, using `image_info` by
+  default, matching the supplied image-focused prompt.
+- `damage_severity`: `little_or_no_damage` < `mild_damage` < `severe_damage`,
+  from `image_damage`. Unannotated damage remains unknown, not “no damage.”
+
+Use `--informativeness-source text` for `text_info`, or `agreed` to require equal,
+known text/image labels. Adapt your prompt if you change the reference policy.
+The selected policy and original annotation values are saved in item metadata.
+These are image-level observations, so text references can repeat when a tweet
+has multiple images. The converter combines event annotation files; it does not
+claim to reconstruct an official train/dev/test split.
+
+Unknown labels are retained as null references and counted. Exact duplicate IDs
+are collapsed; conflicting duplicates are errors. Missing local images fail by
+default; `--skip-missing-images` explicitly skips them and prints a count. This
+option changes the evaluation population. The converter prints conversion and
+unknown-reference counts and writes output atomically. No real CrisisMMD rows or
+images are included in this repository; converter tests use invented TSV rows.
+
+## Docker demo
 
 ```sh
 docker build -t modelagree .
