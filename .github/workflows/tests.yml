@@ -17,3 +17,17 @@ jobs:
       - run: python -m pytest
       - run: modelagree run examples/demo.yaml
       - run: modelagree report runs/demo
+  docker-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build demo image
+        run: docker build --tag modelagree:ci .
+      - name: Run offline demo and verify reports
+        run: |
+          output_dir="$(mktemp -d)"
+          docker run --rm --network none \
+            --mount "type=bind,source=$output_dir,target=/app/runs" \
+            modelagree:ci
+          test -f "$output_dir/demo/report.html"
+          test -f "$output_dir/demo/scores.json"

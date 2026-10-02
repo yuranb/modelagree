@@ -1,5 +1,7 @@
 # modelagree
 
+[![CI](https://github.com/yuranb/modelagree/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuranb/modelagree/actions/workflows/tests.yml)
+
 A small, MIT-licensed Python 3.10+ CLI for evaluating structured LLM labels.
 Run multiple models on the same labeled dataset with one frozen prompt, keep
 all raw response texts, validate each label field independently, and inspect
