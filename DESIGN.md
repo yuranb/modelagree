@@ -7,10 +7,11 @@ storage, metrics, reporting, and the CLI are separate small modules.
 
 **One frozen run config.** YAML names the dataset, prompt, schema, models,
 parameters, and retry settings. Paths resolve relative to the config so invocation
-location does not change inputs. The manifest stores input content and a canonical
-SHA-256 fingerprint; changed inputs require another directory, preserving the
-meaning of a comparison. The prompt is reused verbatim and labels are withheld
-from provider requests.
+location does not change inputs. The manifest records input content and a canonical
+SHA-256 fingerprint. Resumption compares freshly loaded inputs with that recorded
+fingerprint; scoring does not verify the current manifest contents. The same loaded
+prompt text is reused for every request, and reference labels are withheld from
+providers.
 
 **Stable identities.** Model definitions become an ID-keyed mapping and dataset
 IDs must be unique. Provider model names are separate from evaluation IDs, so
@@ -19,18 +20,23 @@ never positions; ID hashes make filesystem paths safe.
 
 **Three independent task types.** Categorical and ordinal values are strings;
 ordinal `levels` explicitly define order. Multi-label values are lists of distinct
-known strings, with an empty list valid. Each schema field is validated separately
-so one bad answer does not discard another field's valid answer.
+known strings, with an empty list valid. Schema definitions accept only `type` and
+the appropriate `labels` or `levels` option. Each output field is validated
+separately so one bad answer does not discard another field's valid answer.
 
 **Provider protocol and offline mock.** A provider accepts one request and returns
 text plus optional usage/latency. A file of canned responses implements this same
 protocol without networking, making the entire evaluation reproducible without
 keys or costs. Missing canned responses are permanent failures, not guesses.
 
-**Auditable records.** One JSON record per model/item stores the request, raw text,
-parse result, UTC timestamps, available usage, and attempt history. Unknown usage
-is null rather than zero. Completed responses are immutable, including invalid
-output, so retrying cannot silently improve measured accuracy.
+**Auditable records.** One JSON record per model/item stores the request, raw
+response text, UTC timestamps, available usage, and attempt history. The runner
+saves each completed provider return before label parsing and leaves `parsed` as
+a null compatibility placeholder. Scoring derives validity from the saved text.
+Unknown usage is null rather than zero. Once durably saved, completed records are
+not rewritten or requested again, so invalid output cannot trigger an
+accuracy-improving retry. JSON escaping allows otherwise unwritable Unicode
+values to be retained in the source text.
 
 **Resumption and concurrency.** A run lock prevents concurrent requests for the
 same run. Atomic replacement and file fsync avoid partially written records.
@@ -44,11 +50,15 @@ and server errors receive a bounded number of attempts with capped exponential
 backoff. Other errors and invalid model output do not. Attempt histories retain
 failures so latency and operational problems remain visible.
 
-**Strict parsing with format accounting.** The parser extracts one JSON object;
-a fence or surrounding prose is flagged even if fields are usable. It rejects
-ambiguous multiple objects, malformed JSON, duplicate keys, and non-finite
-numbers. Extra fields are flagged. Missing or invalid values are never filled,
-coerced, or deduplicated into valid labels.
+**Parsing with format accounting.** A directly supplied JSON object, a fenced
+object, or a recoverable object surrounded by prose can provide labels. Fences
+and surrounding prose are format violations. Ambiguous multiple objects,
+duplicate JSON keys, and nonstandard `NaN`/`Infinity` constants are rejected;
+extra fields are flagged. Numeric label values, including exponent overflow
+such as `1e999`, remain invalid fields. Invalid parsed values are represented as
+null with `valid: false` and an error, while their original spelling remains in
+the saved raw response. No missing or invalid field receives a default label or
+becomes valid through coercion or deduplication.
 
 **Explicit denominators.** Primary metrics require valid predictions and known
 references for the field. Counts report unknown references, invalid predictions,
@@ -87,8 +97,8 @@ failed-attempt time remains distinct from completion time.
 **Executable examples and tests.** Twelve invented scenarios avoid using real
 social-media content. Canned outputs deliberately include failures and disagreements.
 Hand-computed examples test every metric; parser, storage, retry, identity, CLI,
-and end-to-end checks run with sockets disabled. CI covers supported Python
-versions and Docker runs the same offline demo.
+and end-to-end checks run with sockets disabled. CI tests Python 3.10, 3.12,
+and 3.14 and runs the same offline demo in Docker.
 
 **Deliberate scope.** Local files and a synchronous CLI are sufficient for small
 auditable runs. Databases, accounts, web frontends, and job queues would add
@@ -102,11 +112,11 @@ locally rather than silently enabling different schema-enforcement modes per mod
 Saved HTTP bodies retain provider finish metadata and usage for later audits.
 
 **Environment-only credentials.** Only `OPENAI_API_KEY` and `GEMINI_API_KEY` provide
-authentication. They are read at request time and never serialized in headers,
-configs, or error records. Fixed HTTPS endpoints and rejected redirects prevent
-forwarding credentials elsewhere. Successful responses are scrubbed for literal
-environment keys before persistence; this narrow exception to exact raw retention
-is necessary to honor the no-key-on-disk rule. No `.env` loader is included.
+authentication. Their values are read at request time and sent in HTTP headers;
+the authentication headers are not persisted in run artifacts. Fixed HTTPS
+endpoints and rejected redirects restrict where authentication is sent. Config,
+model, parameter, and schema option allowlists reject credential options but do
+not detect secrets pasted into allowed text values. No `.env` loader is included.
 
 **Redaction trade-off.** HTTP text is checked before JSON decoding, then decoded
 strings and object keys are checked again for current environment API-key values.
@@ -144,4 +154,13 @@ IDs, malformed tables, escaping image paths, and missing images unless explicitl
 asked to skip and count missing files. Atomic output avoids half-converted datasets.
 Mocked HTTP tests cover both providers, local-image encoding, usage, refusals,
 malformed responses, transient/permanent failures, and secret redaction, with
-sockets disabled throughout. No validation requires live provider access.
+sockets disabled throughout. These tests do not establish live API compatibility.
+Converter tests use synthetic TSV rows and test images, not an actual CrisisMMD
+archive.
+
+**Known limitations.** The saved manifest is trusted during scoring; its recorded
+fingerprint is not verification of its current contents. Git-ignore protection
+covers conventional paths, not every configurable output directory. Mocked HTTP
+and synthetic TSV tests do not establish live-provider or real-archive
+compatibility. See the README's [Known limitations](README.md#known-limitations)
+for these boundaries and the output-path examples.

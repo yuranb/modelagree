@@ -3,9 +3,10 @@
 [![CI](https://github.com/yuranb/modelagree/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuranb/modelagree/actions/workflows/tests.yml)
 
 A small, MIT-licensed Python 3.10+ CLI for evaluating structured LLM labels.
-Run multiple models on the same labeled dataset with one frozen prompt, keep
-all raw response texts, validate each label field independently, and inspect
-agreement with references and between models. The offline demo needs no API key.
+Run multiple models on the same labeled dataset with one frozen prompt, retain
+response text, validate each label field independently, and inspect agreement
+with references and between models. Retention follows the decoding and credential
+redaction rules below. The offline demo needs no API key.
 
 ## Five-line quickstart
 
@@ -63,7 +64,7 @@ models:
 | Key | Meaning |
 | --- | --- |
 | `dataset` | Required UTF-8 JSONL file, one item per line. |
-| `prompt` | Required UTF-8 file; its exact contents are reused for every model and item. Write the output field/label instructions here. |
+| `prompt` | Required UTF-8 file; its loaded text is reused for every model and item. Write the output field/label instructions here. |
 | `run_dir` | Output directory; defaults to `runs/<config-stem>` relative to the config. |
 | `retry_attempts` | Positive integer, default 3; maximum attempts per item per invocation after infrastructure failures. |
 | `label_schema` | Required mapping of field names to task definitions. |
@@ -89,7 +90,10 @@ Omitted parameters use provider defaults; model-specific support still applies.
 `reasoning_effort` accepts `none`, `minimal`, `low`, `medium`, `high`, or `xhigh`;
 choose a value supported by your model. Temperature must be in [0, 2], top-p in
 [0, 1], seed a nonnegative integer, and token/top-k limits positive integers.
-Unknown options are rejected to catch typos and keep credentials out of config.
+Unknown provider options are rejected. Each schema definition accepts only
+`type` and its task's `labels` or `levels`; extra options are rejected there too.
+Authentication has no YAML option. These checks do not detect arbitrary secrets
+pasted into allowed text values.
 
 Dataset example:
 
@@ -117,26 +121,38 @@ run. No labels are used for selection and item order is not randomized.
 
 ## Output and resumption
 
-`manifest.json` freezes the prompt, schema, items, model definitions, retry
-settings, and mock responses, with a SHA-256 fingerprint. Changing frozen inputs
-requires a new `run_dir`; reordering model definitions does not. Under
-`responses/<model-ID-hash>/<item-ID-hash>.json`, each record includes readable
-IDs, the request, raw response text, parse results, UTC timestamps, measured
-latency, available token counts, and attempt history. Hashes make arbitrary
-IDs safe as filenames. The request never contains reference labels.
-For real providers, records also retain the exact HTTP request body and raw
-HTTP response body, including refusals, truncation metadata, and responses with
-no generated text. Authentication headers are never stored.
+`manifest.json` records the prompt, schema, items, model definitions, retry
+settings, and mock responses, with a SHA-256 fingerprint. Resuming compares
+freshly loaded inputs with the recorded fingerprint; changing those inputs
+requires a new `run_dir`, while reordering model definitions does not. This
+check does not verify the current contents of the saved manifest.
 
-Completed responses—including empty, malformed, or invalid model output—are
-never overwritten or requested again. Permanent provider failures are also
-retained. Only infrastructure failures are retried, with capped exponential
-backoff; exhausted retryable errors can be retried by resuming. Scoring reparses
-raw text without modifying response records. A lock prevents concurrent runners
-from issuing duplicate requests. After a hard crash, remove `.run.lock` only
-once the old process is gone. A crash between receiving and durably saving a
-response can require another request; exactly-once remote execution is not
-promised.
+Under `responses/<model-ID-hash>/<item-ID-hash>.json`, each record includes
+readable IDs, the request, raw response text, UTC timestamps, measured latency,
+available token counts, and attempt history. Hashes make arbitrary IDs safe as
+filenames. Requests omit the item's reference labels. The `parsed` field is a
+compatibility placeholder (`null`); scoring derives field validity from the
+saved response text.
+
+Real-provider records also retain the HTTP request body and decoded HTTP
+response text, including refusals, truncation metadata, and responses with no
+generated text. Authentication headers are not copied into saved request
+records. These artifacts are not a byte-for-byte archive of the HTTP exchange;
+see the decoding and redaction rules below.
+
+The runner saves a completed provider return before label parsing. Once that
+completed record is durably saved, it is neither overwritten nor requested
+again, including when the text is empty, malformed, or contains invalid labels.
+The provider has already decoded its HTTP envelope and applied credential
+redaction before returning to the runner. Scoring and reporting parse saved
+text without changing response records.
+
+Permanent provider failures are retained. Only infrastructure failures are
+retried, with capped exponential backoff; exhausted retryable errors can be
+retried by resuming. A lock prevents concurrent runners from issuing duplicate
+requests. After a hard crash, remove `.run.lock` only once the old process is
+gone. A crash or storage failure before the completed record is durably saved
+can require another request; exactly-once remote execution is not promised.
 
 ## Metrics and denominators
 
@@ -182,25 +198,44 @@ standard library.
 
 ## Real providers and CrisisMMD
 
-No real API calls are made by the tests or the demo. Before choosing real models,
-set `GEMINI_API_KEY` and/or `OPENAI_API_KEY` in your process environment. Keys are
-never accepted in YAML, `.env` is ignored by Git, and the program does not load
-`.env` files. Authentication goes only in HTTP headers to fixed provider endpoints;
-redirects are rejected. Error records contain fixed error codes, not HTTP error
-bodies or exception details. If a successful response echoes an environment key,
-that literal value is replaced with `[REDACTED_API_KEY]` before parsing or saving;
-credential protection is the one exception to byte-for-byte raw text retention.
+No real API calls are made by the tests or the demo. Authentication reads
+`GEMINI_API_KEY` and/or `OPENAI_API_KEY` only from the process environment.
+Config, model, provider-parameter, and schema definitions reject unsupported
+options, including credential options. `.env` is ignored by Git and is not
+loaded by the program.
+
+Authentication values are sent in HTTP headers to fixed provider endpoints;
+those headers are not persisted in run artifacts, and redirects are rejected.
+Provider error records contain fixed codes rather than HTTP error bodies or
+exception details.
+
+Successful HTTP bodies are decoded as UTF-8; invalid byte sequences are replaced.
+Literal current environment API-key values are replaced with
+`[REDACTED_API_KEY]` before JSON decoding. For a parseable JSON envelope, decoded
+strings and keys are checked too, including strings in nested lists and a scalar
+root. Every object member is checked before duplicate keys can overwrite it.
+If decoded redaction finds an additional match, the saved HTTP envelope is
+reserialized from its redacted representation. Reserialization can change
+whitespace, escapes, number representations, and duplicate members; redacted
+keys can collide. Otherwise the decoded HTTP text, with any literal redactions,
+is retained.
+
+Malformed, truncated, or excessively nested JSON receives only literal-text
+redaction. This targeted check does not detect other encodings or secrets absent
+from the current environment. Decoding and redaction can both change retained
+text; exact HTTP-envelope fidelity is sacrificed when redaction requires it.
 
 Only timeouts, connection failures, HTTP 408/429, and HTTP 5xx are retried.
-TLS verification failures and other HTTP errors are permanent. HTTP 200 with
-unusable, missing, refused, or malformed model output is saved once and scored
-as invalid where applicable. The transport uses normal TLS verification and
-supports the standard `SSL_CERT_FILE` mechanism if your system needs a custom
-trust store. It never disables certificate checks.
+TLS verification failures and other HTTP errors are permanent. Once successfully
+saved, HTTP 200 responses with unusable, missing, refused, or malformed model
+output are retained and scored as invalid where applicable. The transport uses
+normal TLS verification and supports the standard `SSL_CERT_FILE` mechanism if
+your system needs a custom trust store. It never disables certificate checks.
 
 Gemini's `output_tokens` records `candidatesTokenCount`; `total_tokens` records
 `totalTokenCount`, which can include thinking tokens, so input plus output need
-not equal total. The original usage metadata remains in the saved HTTP body.
+not equal total. Usage metadata remains in the saved HTTP body, subject to
+credential redaction.
 The adapters follow the official [OpenAI Responses reference](https://developers.openai.com/api/reference/cli/resources/responses/methods/create),
 [OpenAI image-input guide](https://developers.openai.com/api/docs/guides/images-vision),
 and [Gemini generateContent reference](https://ai.google.dev/api/generate-content).
@@ -208,7 +243,9 @@ and [Gemini generateContent reference](https://ai.google.dev/api/generate-conten
 Obtain and extract [CrisisMMD v2.0](https://crisisnlp.qcri.org/crisismmd) yourself.
 The converter only reads your local copy; it never downloads data. Put the
 extracted `CrisisMMD_v2.0/` directory under `data/crisismmd/` or keep it outside
-this repository. These data paths and generated runs are ignored by Git.
+this repository. The shipped Git rules ignore those conventional data paths
+and directories named `runs`; arbitrary custom output directories are not
+automatically ignored.
 
 ```sh
 python scripts/prepare_crisismmd.py /absolute/path/to/CrisisMMD_v2.0
@@ -241,6 +278,27 @@ default; `--skip-missing-images` explicitly skips them and prints a count. This
 option changes the evaluation population. The converter prints conversion and
 unknown-reference counts and writes output atomically. No real CrisisMMD rows or
 images are included in this repository; converter tests use invented TSV rows.
+
+## Known limitations
+
+- The manifest fingerprint detects changes to freshly loaded run inputs during
+  resumption. Scoring does not recompute it from the current manifest contents,
+  so it does not detect manual edits to saved references or other manifest data.
+- The shipped Git rules cover conventional data and run directory names. Check
+  custom `run_dir` and converter `--output` paths before staging files. Run
+  artifacts contain original input data and are not anonymized. Git-ignore
+  rules do not protect files that have already been tracked.
+- Provider tests use mocked HTTP. They check request construction and response
+  handling, not live API or model compatibility.
+- Converter tests use synthetic TSV rows and local test images. Compatibility
+  with an actual downloaded CrisisMMD archive has not been verified.
+
+These examples show which output paths the shipped Git rules ignore:
+
+| Example output | Ignored by shipped Git rules? |
+| --- | --- |
+| `runs/demo/report.html` | yes |
+| `custom-output/report.html` | no |
 
 ## Docker demo
 
