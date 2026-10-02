@@ -187,6 +187,43 @@ def test_echoed_key_is_redacted_from_raw_envelope_and_saved_text(mocked_http,mon
     assert read_json(response_path(directory,'openai','one'))['raw_response']=='echo [REDACTED_API_KEY]'
 
 
+@pytest.mark.parametrize('provider', ['openai', 'gemini'])
+@pytest.mark.parametrize('encoding', ['unicode', 'slash'])
+def test_json_escaped_keys_are_redacted(provider, encoding, mocked_http, monkeypatch, config_factory):
+    secret = 'dummy/private-key'
+    monkeypatch.setenv(provider.upper() + '_API_KEY', secret)
+    payload = envelope(provider, 'echo ' + secret)
+    payload['metadata'] = {secret: ['prefix ' + secret, {'echo': secret}]}
+    escaped = ''.join(f'\\u{ord(c):04x}' for c in secret) if encoding == 'unicode' else secret.replace('/', '\\/')
+    wire = json.dumps(payload).replace(secret, escaped)
+    assert secret not in wire
+    mocked_http[1].append(wire.encode())
+    directory = runner.run(config_factory(models=[model(provider)]))
+    record = read_json(response_path(directory, provider, 'one'))
+    saved_envelope = json.loads(record['raw_http_response'])
+    assert secret not in json.dumps(saved_envelope)
+    assert record['raw_response'] == 'echo [REDACTED_API_KEY]'
+    assert saved_envelope['metadata'] == {
+        '[REDACTED_API_KEY]': ['prefix [REDACTED_API_KEY]', {'echo': '[REDACTED_API_KEY]'}]}
+    assert saved_envelope.get('usage', saved_envelope.get('usageMetadata')) == payload.get('usage', payload.get('usageMetadata'))
+
+
+def test_escaped_secret_in_overwritten_json_member_is_redacted(mocked_http, monkeypatch):
+    monkeypatch.setenv('OPENAI_API_KEY', 'dummy-key')
+    mocked_http[1].append(b'{"echo":"dummy-\\u006bey","echo":"safe"}')
+    data, raw = http.post_json('https://example.invalid', {}, {}, 1)
+    assert data == {'echo': 'safe'}
+    assert 'dummy-key' not in repr(json.loads(raw, object_pairs_hook=list))
+
+
+def test_http_text_preserved_when_decoded_redaction_is_unneeded(mocked_http, monkeypatch):
+    monkeypatch.setenv('OPENAI_API_KEY', 'dummy-key')
+    raw = ' { "label" : "\\u0061", "count": 2 }\n'
+    mocked_http[1].append(raw.encode())
+    data, saved = http.post_json('https://example.invalid', {}, {}, 1)
+    assert data == {'label': 'a', 'count': 2} and saved == raw
+
+
 def test_completed_real_response_can_resume_without_a_key(mocked_http,monkeypatch,config_factory):
     monkeypatch.setenv('OPENAI_API_KEY','dummy-credential')
     calls,responses=mocked_http; responses.append(envelope('openai'))

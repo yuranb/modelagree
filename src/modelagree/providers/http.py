@@ -5,7 +5,7 @@ import ssl
 from urllib import error, request
 
 from .base import ProviderError
-from ..security import redact
+from ..security import decode_redacted_json
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -23,7 +23,7 @@ def post_json(url, body, headers, timeout):
                         headers={'Content-Type':'application/json',**headers}, method='POST')
     try:
         with open_request(req, timeout) as response:
-            raw=redact(response.read().decode('utf-8',errors='replace'))
+            raw=response.read().decode('utf-8',errors='replace')
     except error.HTTPError as exc:
         code=exc.code
         exc.close()
@@ -38,10 +38,7 @@ def post_json(url, body, headers, timeout):
         raise ProviderError('timeout' if isinstance(exc.reason,TimeoutError) else 'connection_error',True) from None
     except (ConnectionError, OSError, http.client.HTTPException):
         raise ProviderError('connection_error',True) from None
-    try:
-        data=json.loads(raw)
-    except ValueError:
-        data={}
+    data, raw = decode_redacted_json(raw)
     return data if isinstance(data,dict) else {}, raw
 
 

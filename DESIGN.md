@@ -108,6 +108,17 @@ forwarding credentials elsewhere. Successful responses are scrubbed for literal
 environment keys before persistence; this narrow exception to exact raw retention
 is necessary to honor the no-key-on-disk rule. No `.env` loader is included.
 
+**Redaction trade-off.** HTTP text is checked before JSON decoding, then decoded
+strings and object keys are checked again for current environment API-key values.
+Every object member is checked before duplicate keys are collapsed. If decoded
+redaction finds a match, the retained HTTP envelope is reserialized: whitespace,
+escapes, number representations, and duplicate members may change, and redacted
+keys can collide. Otherwise the decoded HTTP text is retained. UTF-8 decoding
+replaces invalid bytes. This is targeted credential scrubbing, not a general secret
+detector: malformed, truncated, or excessively nested JSON gets only literal-text
+redaction, and other encodings or secrets not in the current environment are not
+covered. Privacy takes precedence over exact envelope fidelity when a match is found.
+
 **Image evidence.** Dataset-relative local image paths resolve independently of
 the config location. Fingerprints and per-run image snapshots prevent a changed
 file from silently altering a resumed comparison. JPEG, PNG, and WebP are sent
