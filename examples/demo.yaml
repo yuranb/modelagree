@@ -1,0 +1,25 @@
+dataset: demo.jsonl
+prompt: prompt.txt
+run_dir: ../runs/demo
+retry_attempts: 3
+label_schema:
+  relevance:
+    type: categorical
+    labels: [relevant, unrelated]
+  severity:
+    type: ordinal
+    levels: [none, minor, major]
+  needs:
+    type: multi_label
+    labels: [food, water, shelter]
+models:
+  - id: mock-a
+    provider: mock
+    model: canned-a
+    parameters: {}
+    responses: mock-a.json
+  - id: mock-b
+    provider: mock
+    model: canned-b
+    parameters: {}
+    responses: mock-b.json

@@ -1,0 +1,12 @@
+{"id": "demo-01", "text": "The fictional town of Pineglass reports a collapsed bridge. Residents request water.", "labels": {"relevance": "relevant", "severity": "major", "needs": ["water"]}}
+{"id": "demo-02", "text": "A made-up community center has a cracked window and needs food deliveries.", "labels": {"relevance": "relevant", "severity": "minor", "needs": ["food"]}}
+{"id": "demo-03", "text": "Invented notice: the public library is hosting a chess afternoon.", "labels": {"relevance": "unrelated", "severity": "none", "needs": []}}
+{"id": "demo-04", "text": "A fictional storm destroyed several roofs. Temporary shelter and water are requested.", "labels": {"relevance": "relevant", "severity": "major", "needs": ["shelter", "water"]}}
+{"id": "demo-05", "text": "The imaginary Northbank shelter is open; no structural damage is reported.", "labels": {"relevance": "relevant", "severity": "none", "needs": []}}
+{"id": "demo-06", "text": "An invented bakery announces a new cinnamon pastry.", "labels": {"relevance": "unrelated", "severity": "none", "needs": []}}
+{"id": "demo-07", "text": "The fictional East Ferry warehouse has minor siding damage. Food and water are needed.", "labels": {"relevance": "relevant", "severity": "minor", "needs": ["food", "water"]}}
+{"id": "demo-08", "text": "A made-up flood washed away a house. Its occupants request shelter.", "labels": {"relevance": "relevant", "severity": "major", "needs": ["shelter"]}}
+{"id": "demo-09", "text": "Invented bulletin: a fallen branch scratched an empty storage shed.", "labels": {"relevance": "relevant", "severity": "minor", "needs": []}}
+{"id": "demo-10", "text": "An imaginary rescue station asks for food, water, and shelter supplies after a building collapse.", "labels": {"relevance": "relevant", "severity": "major", "needs": ["food", "water", "shelter"]}}
+{"id": "demo-11", "text": "Fictional exercise note: the condition of the observation hut could not be established.", "labels": {"relevance": "relevant", "severity": null, "needs": []}}
+{"id": "demo-12", "text": "Invented fragment with no usable context.", "labels": {"relevance": null, "severity": null, "needs": null}}

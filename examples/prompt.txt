@@ -1,0 +1,5 @@
+Label the supplied synthetic scenario. Return exactly one JSON object with these fields:
+- "relevance": "relevant" for disaster response information, otherwise "unrelated".
+- "severity": "none", "minor", or "major" physical damage.
+- "needs": a list containing any explicitly requested resources: "food", "water", "shelter".
+Use an empty list when no resources are requested. Do not include explanations or Markdown.

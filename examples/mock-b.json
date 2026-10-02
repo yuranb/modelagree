@@ -1,0 +1,74 @@
+{
+  "demo-01": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"none\", \"needs\": []}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-02": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": [\"food\"]}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-03": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"none\", \"needs\": []}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-04": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"water\"]}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-05": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"none\", \"needs\": []}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-06": {
+    "text": "{malformed JSON}",
+    "input_tokens": 45,
+    "output_tokens": 2,
+    "total_tokens": 47
+  },
+  "demo-07": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": [\"food\", \"water\"]}",
+    "input_tokens": 45,
+    "output_tokens": 7,
+    "total_tokens": 52
+  },
+  "demo-08": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"shelter\"]}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-09": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": []}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-10": {
+    "text": "Here are the labels: {\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"food\", \"water\", \"shelter\"]}",
+    "input_tokens": 45,
+    "output_tokens": 12,
+    "total_tokens": 57
+  },
+  "demo-11": {
+    "text": "{\"relevance\": \"relevant\", \"severity\": null, \"needs\": []}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  },
+  "demo-12": {
+    "text": "{\"relevance\": null, \"severity\": null, \"needs\": null}",
+    "input_tokens": 45,
+    "output_tokens": 6,
+    "total_tokens": 51
+  }
+}
