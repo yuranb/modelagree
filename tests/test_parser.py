@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from modelagree.schema import parse_response, validate_schema
 
@@ -5,6 +7,14 @@ SCHEMA = {'label': {'type':'categorical','labels':['a','b']},
           'rank': {'type':'ordinal','levels':['low','mid','high']},
           'tags': {'type':'multi_label','labels':['x','y']}}
 VALID = '{"label":"a","rank":"mid","tags":["x"]}'
+
+
+@pytest.mark.parametrize('value', ['1e999', '"\\ud800"', '[1e999,"\\ud800"]'])
+def test_invalid_fields_are_serializable(value):
+    parsed = parse_response('{"label":' + value + ',"rank":"mid","tags":[]}', SCHEMA)
+    json.dumps(parsed, ensure_ascii=False, allow_nan=False).encode('utf-8')
+    assert parsed['fields']['label'] == {'valid': False, 'value': None, 'error': 'unknown label'}
+    assert parsed['fields']['rank']['valid'] and parsed['fields']['tags']['valid']
 
 
 @pytest.mark.parametrize('text', ['', '   ', 'garbage', '{bad}', '{"label":', '[]', 'null',

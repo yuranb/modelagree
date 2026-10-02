@@ -11,6 +11,7 @@ from modelagree.images import image_info
 from modelagree.providers import create_provider
 from modelagree.providers import http
 from modelagree.providers.base import ProviderError
+from modelagree.scoring import score
 from modelagree.storage import read_json, response_path
 
 
@@ -144,7 +145,8 @@ def test_successful_http_without_model_text_is_preserved(provider,raw,mocked_htt
     directory=runner.run(cfg); path=response_path(directory,provider,'one')
     record=read_json(path)
     assert record['raw_http_response']==raw.decode() and record['raw_response']==''
-    assert record['status']=='completed' and not record['parsed']['fields']['label']['valid']
+    assert record['status']=='completed' and record['parsed'] is None
+    assert score(directory)['models'][provider]['fields']['label']['counts']['invalid_prediction'] == 1
     before=path.read_bytes(); runner.run(cfg)
     assert len(calls)==1 and path.read_bytes()==before
 

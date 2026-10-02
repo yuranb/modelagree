@@ -8,7 +8,41 @@ from pytest_socket import SocketBlockedError
 
 from modelagree import runner
 from modelagree.providers.base import ProviderError, Response
+from modelagree.scoring import score
 from modelagree.storage import read_json, response_path, run_lock
+
+
+@pytest.mark.parametrize('raw', ['{"label":1e999}', '{"label":"\\ud800"}',
+                                 '{"label":"\ud800"}'], ids=['overflow', 'escaped-surrogate', 'surrogate'])
+def test_unserializable_labels_preserve_completion(config_factory, monkeypatch, raw):
+    calls = []
+    class Provider:
+        def generate(self, request):
+            calls.append(request)
+            return Response(raw)
+    monkeypatch.setattr(runner, 'create_provider', lambda model: Provider())
+    config = config_factory()
+    directory = runner.run(config)
+    path = response_path(directory, 'm', 'one')
+    before = path.read_bytes()
+    record = read_json(path)
+    assert record['status'] == 'completed'
+    assert record['raw_response'] == raw
+    counts = score(directory)['models']['m']['fields']['label']['counts']
+    assert counts['invalid_prediction'] == 1 and counts['eligible'] == 0
+    runner.run(config)
+    assert len(calls) == 1
+    assert path.read_bytes() == before
+
+
+def test_completion_is_saved_without_label_parsing(config_factory, monkeypatch):
+    def broken_parser(*args):
+        raise AssertionError('label parsing ran before persistence')
+    monkeypatch.setattr(runner, 'parse_response', broken_parser, raising=False)
+    directory = runner.run(config_factory())
+    record = read_json(response_path(directory, 'm', 'one'))
+    assert record['status'] == 'completed' and record['raw_response'] == '{"label":"a"}'
+    assert record['parsed'] is None
 
 
 def test_network_disabled():
@@ -28,7 +62,8 @@ def test_resume_preserves_even_invalid_completion(config_factory, monkeypatch):
     monkeypatch.setattr(runner,'create_provider',lambda m:Never())
     runner.run(config)
     assert path.read_bytes()==before
-    assert read_json(path)['parsed']['fields']['label']['value'] is None
+    assert read_json(path)['parsed'] is None
+    assert score(directory)['models']['m']['fields']['label']['counts']['invalid_prediction'] == 1
 
 
 @pytest.mark.parametrize('retryable,expected',[(True,2),(False,1)])

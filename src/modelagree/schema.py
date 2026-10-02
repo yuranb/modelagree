@@ -101,6 +101,6 @@ def parse_response(raw, schema):
         reason = error if obj is None else (
             "missing field" if name not in obj else validate_value(obj[name], spec))
         fields[name] = {"valid": reason is None,
-                        "value": obj.get(name) if obj is not None else None,
+                        "value": obj[name] if reason is None else None,
                         "error": reason}
     return {"fields": fields, "format_violations": violations}

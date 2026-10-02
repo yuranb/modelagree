@@ -5,7 +5,6 @@ from .config import digest, load_config
 from .images import snapshot_image
 from .providers import create_provider
 from .providers.base import ProviderError
-from .schema import parse_response
 from .storage import read_json, response_path, run_lock, utc_now, write_json
 
 
@@ -60,10 +59,10 @@ def run(config_path, limit=None):
                                   raw_http_response=response.raw_http_response, api_request=response.api_request,
                                   started_at=started_at, finished_at=finished_at,
                                   latency_seconds=response.latency_seconds if response.latency_seconds is not None else elapsed,
-                                  usage={k: values[k] for k in ("input_tokens", "output_tokens", "total_tokens")},
-                                  parsed=parse_response(response.text, frozen["label_schema"]))
+                                  usage={k: values[k] for k in ("input_tokens", "output_tokens", "total_tokens")})
                     record["attempts"].append({"started_at": started_at, "finished_at": finished_at,
                                                 "latency_seconds": elapsed, "error": None})
+                    # Commit the source text without label parsing; scoring derives validity.
                     write_json(path, record)
                     break
     return run_dir

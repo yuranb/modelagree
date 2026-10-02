@@ -22,7 +22,8 @@ def write_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        # Escape lone surrogates as JSON Unicode escapes while preserving other text.
+        with os.fdopen(fd, "w", encoding="utf-8", errors="backslashreplace") as handle:
             handle.write(redact(json.dumps(data, indent=2, ensure_ascii=False, allow_nan=False)))
             handle.write("\n")
             handle.flush()
