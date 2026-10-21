@@ -29,7 +29,10 @@ def mocked_http(monkeypatch):
 
 
 def model(provider, parameters=None):
-    return {'id':provider,'provider':provider,'model':'test-model','parameters':parameters or {},'timeout_seconds':7}
+    if parameters is None:
+        parameters = {'max_output_tokens':200} if provider=='anthropic' else {}
+    return {'id':provider,'provider':provider,'model':'test-model',
+            'parameters':parameters,'timeout_seconds':7}
 
 
 def request(provider, parameters=None, image=None):
@@ -38,6 +41,10 @@ def request(provider, parameters=None, image=None):
 
 
 def envelope(provider, text='{"label":"a"}'):
+    if provider=='anthropic':
+        return {'content':[{'type':'thinking','thinking':'private reasoning'},
+                           {'type':'text','text':text}], 'stop_reason':'end_turn',
+                'usage':{'input_tokens':7,'output_tokens':3}}
     if provider=='openai':
         return {'status':'completed','output':[{'type':'reasoning','summary':[]},
                  {'type':'message','content':[{'type':'output_text','text':text}]}],
@@ -101,7 +108,7 @@ def test_reasoning_and_gemini_model_prefix(mocked_http,monkeypatch):
 
 
 @pytest.mark.parametrize('status,retryable',[(400,False),(401,False),(403,False),(404,False),
-                                          (408,True),(429,True),(500,True),(502,True),(503,True),(599,True)])
+                                          (408,True),(429,True),(500,True),(502,True),(503,True),(529,True),(599,True)])
 def test_http_errors_are_classified_without_leaking_details(status,retryable,mocked_http):
     calls,responses=mocked_http
     responses.append(HTTPError('https://example.invalid',status,'secret-body-and-key',{},io.BytesIO(b'secret')))
@@ -129,14 +136,14 @@ def test_redirects_cannot_forward_credentials():
         http.NoRedirect().redirect_request(None,None,307,'redirect',{},'https://elsewhere.invalid')
 
 
-@pytest.mark.parametrize('provider',['openai','gemini'])
+@pytest.mark.parametrize('provider',['openai','gemini','anthropic'])
 def test_missing_key_fails_before_http(provider,mocked_http):
     with pytest.raises(ValueError,match=provider.upper()+'_API_KEY'):
         create_provider(model(provider))
     assert mocked_http[0]==[]
 
 
-@pytest.mark.parametrize('provider',['openai','gemini'])
+@pytest.mark.parametrize('provider',['openai','gemini','anthropic'])
 @pytest.mark.parametrize('raw',[b'not an API JSON response',b'{}'])
 def test_successful_http_without_model_text_is_preserved(provider,raw,mocked_http,monkeypatch,config_factory):
     calls,responses=mocked_http; responses.append(raw)
@@ -151,7 +158,7 @@ def test_successful_http_without_model_text_is_preserved(provider,raw,mocked_htt
     assert len(calls)==1 and path.read_bytes()==before
 
 
-@pytest.mark.parametrize('provider',['openai','gemini'])
+@pytest.mark.parametrize('provider',['openai','gemini','anthropic'])
 def test_mocked_http_retry_then_invalid_completion_is_never_retried(provider,mocked_http,monkeypatch,config_factory):
     calls,responses=mocked_http
     monkeypatch.setenv(provider.upper()+'_API_KEY','dummy-private-key')
@@ -187,7 +194,7 @@ def test_echoed_key_is_redacted_from_raw_envelope_and_saved_text(mocked_http,mon
     assert read_json(response_path(directory,'openai','one'))['raw_response']=='echo [REDACTED_API_KEY]'
 
 
-@pytest.mark.parametrize('provider', ['openai', 'gemini'])
+@pytest.mark.parametrize('provider', ['openai', 'gemini', 'anthropic'])
 @pytest.mark.parametrize('encoding', ['unicode', 'slash'])
 def test_json_escaped_keys_are_redacted(provider, encoding, mocked_http, monkeypatch, config_factory):
     secret = 'dummy/private-key'
@@ -239,3 +246,95 @@ def test_invalid_credential_cannot_leak_in_an_http_exception(monkeypatch,mocked_
     with pytest.raises(ValueError) as exc:
         create_provider(model('openai'))
     assert 'secret' not in str(exc.value) and not mocked_http[0]
+
+
+@pytest.mark.parametrize('with_image', [False, True])
+@pytest.mark.parametrize('effort', [None, 'low', 'medium', 'high', 'xhigh', 'max'])
+def test_anthropic_request(with_image, effort, mocked_http, monkeypatch, tiny_image):
+    calls, responses = mocked_http
+    monkeypatch.setenv('ANTHROPIC_API_KEY', 'dummy-anthropic-key')
+    parameters = {'max_output_tokens': 2048}
+    if effort is not None:
+        parameters['effort'] = effort
+    payload = envelope('anthropic')
+    payload['content'].extend([{'type': 'text', 'text': '\n'},
+                               {'type': 'thinking', 'text': 'must not be included'}])
+    responses.append(payload)
+    result = create_provider(model('anthropic')).generate(
+        request('anthropic', parameters, image_info(tiny_image) if with_image else None))
+    wire, timeout = calls[0]
+    body = json.loads(wire.data)
+    assert wire.full_url == 'https://api.anthropic.com/v1/messages'
+    assert wire.method == 'POST' and timeout == 7
+    assert wire.get_header('X-api-key') == 'dummy-anthropic-key'
+    assert wire.get_header('Anthropic-version') == '2023-06-01'
+    assert wire.get_header('Content-type') == 'application/json'
+    expected = {'model': 'test-model', 'max_tokens': 2048, 'system': 'Frozen prompt.',
+                'messages': [{'role': 'user', 'content': [
+                    {'type': 'text', 'text': 'Invented image context.'}]}]}
+    if with_image:
+        expected['messages'][0]['content'].append({'type': 'image', 'source': {
+            'type': 'base64', 'media_type': 'image/png',
+            'data': base64.b64encode(tiny_image.read_bytes()).decode()}})
+    if effort is not None:
+        expected['output_config'] = {'effort': effort}
+    assert body == expected
+    assert result.api_request == {'url': wire.full_url, 'body': expected}
+    assert 'dummy-anthropic-key' not in json.dumps(result.api_request)
+    assert result.text == '{"label":"a"}\n'
+    assert (result.input_tokens, result.output_tokens, result.total_tokens) == (7, 3, None)
+    assert json.loads(result.raw_http_response) == payload
+
+
+@pytest.mark.parametrize('reason,text', [('refusal', 'Cannot label.'),
+    ('max_tokens', '{"label":'), ('refusal', '{"label":"a"}'),
+    ('max_tokens', '{"label":"a"}')])
+def test_anthropic_stopped_output_is_invalid_and_immutable(
+        reason, text, mocked_http, monkeypatch, config_factory):
+    calls, responses = mocked_http
+    monkeypatch.setenv('ANTHROPIC_API_KEY', 'dummy-anthropic-key')
+    payload = envelope('anthropic', text)
+    payload['stop_reason'] = reason
+    responses.append(payload)
+    cfg = config_factory(models=[model('anthropic')])
+    directory = runner.run(cfg)
+    path = response_path(directory, 'anthropic', 'one')
+    before = path.read_bytes()
+    record = read_json(path)
+    assert record['status'] == 'completed' and record['raw_response'] == text
+    assert json.loads(record['raw_http_response'])['stop_reason'] == reason
+    assert record['parsed'] is None
+    result = score(directory)['models']['anthropic']
+    field = result['fields']['label']
+    assert field['counts']['invalid_prediction'] == 1 and field['counts']['eligible'] == 0
+    assert field['failure_as_wrong']['exact_agreement'] == {
+        'value': 0, 'numerator': 0, 'denominator': 1}
+    assert result['resources']['format_violations']['by_type'] == {'anthropic_' + reason: 1}
+    monkeypatch.delenv('ANTHROPIC_API_KEY')
+    runner.run(cfg)
+    assert len(calls) == 1 and path.read_bytes() == before
+
+
+@pytest.mark.parametrize('usage', [None, [], {'input_tokens': True, 'output_tokens': -1}])
+def test_anthropic_missing_or_invalid_usage(usage, mocked_http, monkeypatch):
+    monkeypatch.setenv('ANTHROPIC_API_KEY', 'dummy-anthropic-key')
+    payload = envelope('anthropic')
+    payload['usage'] = usage
+    mocked_http[1].append(payload)
+    result = create_provider(model('anthropic')).generate(request('anthropic'))
+    assert result.input_tokens is None and result.output_tokens is None
+    assert result.total_tokens is None
+
+
+def test_anthropic_529_retries_same_request(mocked_http, monkeypatch, config_factory):
+    monkeypatch.setenv('ANTHROPIC_API_KEY', 'dummy-anthropic-key')
+    monkeypatch.setattr(runner.time, 'sleep', lambda n: None)
+    calls, responses = mocked_http
+    responses.extend([HTTPError('https://api.anthropic.com/v1/messages', 529,
+                               'private error', {}, io.BytesIO()), envelope('anthropic')])
+    directory = runner.run(config_factory(models=[model('anthropic')]))
+    record = read_json(response_path(directory, 'anthropic', 'one'))
+    assert record['status'] == 'completed'
+    assert record['attempts'][0]['error'] == 'http_529'
+    assert len(calls) == 2 and calls[0][0].data == calls[1][0].data
+    assert score(directory)['models']['anthropic']['fields']['label']['counts']['eligible'] == 1

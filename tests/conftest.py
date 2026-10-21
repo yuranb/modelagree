@@ -27,6 +27,7 @@ def config_factory(tmp_path):
 def no_real_keys(monkeypatch):
     monkeypatch.delenv('OPENAI_API_KEY',raising=False)
     monkeypatch.delenv('GEMINI_API_KEY',raising=False)
+    monkeypatch.delenv('ANTHROPIC_API_KEY',raising=False)
 
 
 @pytest.fixture

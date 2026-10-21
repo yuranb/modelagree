@@ -180,3 +180,22 @@ values and list lengths/order, with relative float tolerance of 1e-12. Only
 remain checked. Exact run-fingerprint equality guards the frozen defaults.
 A separately saved 0.1.0 demo manifest exercises reporting without regenerating
 that manifest under future code. Neither test requires a live provider.
+
+
+**Anthropic Messages provider (T3.1).** The adapter reuses the fixed-endpoint
+standard-library HTTPS transport, redirect rejection, retries, and redaction.
+`ANTHROPIC_API_KEY` is environment-only and included in the shared redactor.
+The body places text before the image, matching the existing providers for
+comparable inputs. The frozen prompt is the system message. Only an explicit
+positive `max_output_tokens` and optional `effort` are accepted; no sampling,
+thinking, cache, or fallback options are sent. Missing effort remains omitted.
+
+Text blocks are concatenated and other blocks skipped. Usage comes directly
+from input/output token counts; total tokens remain unknown. Scoring inspects
+Anthropic's retained HTTP envelope for `refusal` and `max_tokens`, marks every
+field invalid, and records `anthropic_refusal` or `anthropic_max_tokens` as a
+format violation. This is derived in memory without rewriting completed
+records or discarding their source text. It also prevents parseable partial
+JSON from being counted as valid. Existing providers and frozen demo scores
+retain their behavior. Mocked HTTP tests cover the new adapter; no live API
+validation is claimed.

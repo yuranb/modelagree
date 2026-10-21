@@ -1,0 +1,21 @@
+# First run scripts/prepare_crisismmd.py on your locally downloaded v2.0 copy.
+# The default converter uses image informativeness and image damage labels.
+dataset: ../data/crisismmd/items.jsonl
+prompt: crisismmd-prompt.txt
+run_dir: ../runs/crisismmd-claude
+retry_attempts: 3
+label_schema:
+  informativeness:
+    type: categorical
+    labels: [informative, not_informative]
+  damage_severity:
+    type: ordinal
+    levels: [little_or_no_damage, mild_damage, severe_damage]
+models:
+  - id: haiku
+    provider: anthropic
+    model: claude-haiku-5-5
+    timeout_seconds: 60
+    parameters:
+      max_output_tokens: 2048
+      effort: low
