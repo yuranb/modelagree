@@ -76,6 +76,16 @@ After preparing your local CrisisMMD dataset, run
 with a 60-second timeout. Tests use mocked HTTP and do not establish live API
 compatibility.
 
+## Partial live check
+
+On 2026-10-21, the maintainer ran the CrisisMMD v2.0 converter on a real
+archive with annotations and one event's images, using `--skip-missing-images`.
+The `anthropic` provider then completed 12/12 and 50/50 live requests with
+`claude-haiku-5-5`, with zero format violations in both runs. This was a partial
+check covering one event and its first 50 records. Full-archive compatibility
+and other providers remain unverified. See the README's
+[Known limitations](../README.md#known-limitations) for the remaining boundaries.
+
 ## Troubleshooting
 
 On macOS with the python.org installer, missing trusted root certificates can

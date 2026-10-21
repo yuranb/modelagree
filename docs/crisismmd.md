@@ -41,3 +41,9 @@ default; `--skip-missing-images` explicitly skips them and prints a count. This
 option changes the evaluation population. The converter prints conversion and
 unknown-reference counts and writes output atomically. No real CrisisMMD rows or
 images are included in this repository; converter tests use invented TSV rows.
+
+On 2026-10-21, the maintainer ran the converter on a real CrisisMMD v2.0 archive
+with annotations and one event's images, using `--skip-missing-images`.
+The subsequent [partial live provider check](providers.md#partial-live-check)
+covered that event's first 50 records; full-archive compatibility remains
+unverified.
