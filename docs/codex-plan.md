@@ -5,8 +5,9 @@
 
 ## 0. 怎么用这份文档
 
-**一次只做一个任务，一个任务一个分支一个 PR。** 按第 2 节的顺序推进，合并后再派下一个。
-标注“可并行”的任务可以同时派发，但它们可能在 `cli.py`、`report.py` 上有小冲突，合并时需要处理。
+**前提：** `AGENTS.md` 和本文件必须已经合并到 `main`，Codex 从 `main` 开分支时才能读到它们。
+
+**一次只做一个任务，一个任务一个分支一个 PR。** 按第 2 节表格的顺序推进，上一个 PR 合并后再派下一个。
 
 派发给 Codex 的提示词模板：
 
@@ -33,43 +34,53 @@ the spec and why. Do not start any other task.
 4. 这次评估能否被别人原样复现和审计？（已有：冻结 manifest、不可变原始响应）
 
 差异化来自统计严谨性和可审计性，不来自功能数量。因此优先级是：
-**统计核心（Phase 1）> 人类基线（Phase 2）> 更多 provider（Phase 3）> 发布与传播（Phase 4）。**
+**统计核心（Phase 1）> 人类基线（Phase 2）> 发布与传播（Phase 4）。**
+
+**模型范围：** 维护者的真实评估只使用 Claude Haiku 5.5（`claude-haiku-5-5`）。因此：
+
+- Anthropic provider（T3.1）提前到第二个做，因为没有它就跑不了任何真实评估。
+- 其他 provider 相关任务（T3.2、T3.3、T3.4）暂缓。现有的 OpenAI、Gemini provider 保留不动。
+- “模型之间”的比较改为同一模型的重复运行（自一致性，见 T2.5）。pairwise 和 multi-rater 功能照常实现，用来衡量重复运行之间的稳定性。
+- 主案例数据集是 Measuring Hate Speech 语料（T2.6），用多名标注员作为人类基线。
 
 ## 2. 任务总览与顺序
 
-| ID | 任务 | 依赖 | 规模 | 优先级 | 可并行 |
-| --- | --- | --- | --- | --- | --- |
-| T0.1 | 兼容性金标测试 + CHANGELOG | — | S | P0 | |
-| T0.2 | README 瘦身，文档拆分到 `docs/` | T0.1 | M | P0 | 与 T0.3、T1.1 |
-| T0.3 | lint、`--version`、包元数据 | T0.1 | S | P1 | 与 T0.2 |
-| T1.1 | scoring 重构为纯函数（输出不变） | T0.1 | S | P0 | 与 T0.2 |
-| T1.2 | 有序任务加权 kappa | T1.1 | S | P0 | |
-| T1.3 | 逐标签 P/R/F1 与 macro-F1 | T1.2 | S | P0 | |
-| T1.4 | Krippendorff's alpha（多评分者信度） | T1.3 | M | P0 | |
-| T1.5 | Bootstrap 置信区间 | T1.4 | M | P0 | |
-| T1.6 | `scores.json` 结构文档 | T1.5 | S | P1 | |
-| T2.1 | `modelagree validate` 预检命令 | T0.1 | S | P1 | 与 Phase 1 |
-| T2.2 | `modelagree export` CSV 导出 | T1.1 | S | P1 | 与 Phase 1 |
-| T2.3 | 多人工标注员与人类基线 | T1.5 | L | P0 | |
-| T2.4 | 多数投票参考标签策略 | T2.3 | M | P2 | |
-| T2.5 | 使用配方文档 | T2.3 | S | P2 | |
-| T3.1 | Anthropic provider | T0.1 | M | P1 | 与 Phase 1/2 |
-| T3.2 | OpenAI 兼容接口 provider（vLLM/Ollama 等） | T3.1 | M | P1 | |
-| T3.3 | 并发执行 `--workers` | T3.2 | M | P2 | |
-| T3.4 | 真实 API 冒烟脚本（不进 CI） | T3.2 | S | P2 | |
-| T4.1 | 打包与 PyPI 发布流程 | 见里程碑 | S | P1 | |
-| T4.2 | README 截图与对比说明 | T0.2, T1.5, T2.3 | S | P1 | |
-| T4.3 | 社区文件（CONTRIBUTING、CITATION 等） | T0.2 | S | P1 | 与 T4.2 |
-| T4.4 | 人类基线教程 | T2.3 | S | P1 | 与 T4.2 |
-| T4.5 | JOSS 论文草稿（可选） | v0.3.0 | M | P2 | |
+按“顺序”列逐个执行：
 
-T1.2 到 T1.5 都要改 `metrics.py`，所以按顺序执行，不要并行。
+| 顺序 | ID | 任务 | 依赖 | 规模 | 优先级 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | T0.1 | 兼容性金标测试 + CHANGELOG | — | S | P0 |
+| 2 | T3.1 | Anthropic provider（Claude Haiku 5.5） | T0.1 | M | P0 |
+| 3 | T0.2 | README 瘦身，文档拆分到 `docs/` | T3.1 | M | P0 |
+| 4 | T0.3 | lint、`--version`、包元数据 | T0.1 | S | P1 |
+| 5 | T1.1 | scoring 重构为纯函数（输出不变） | T0.1 | S | P0 |
+| 6 | T1.2 | 有序任务加权 kappa | T1.1 | S | P0 |
+| 7 | T1.3 | 逐标签 P/R/F1 与 macro-F1 | T1.2 | S | P0 |
+| 8 | T1.4 | Krippendorff's alpha（多评分者信度） | T1.3 | M | P0 |
+| 9 | T1.5 | Bootstrap 置信区间 | T1.4 | M | P0 |
+| 10 | T1.6 | `scores.json` 结构文档 | T1.5 | S | P1 |
+| 11 | T2.1 | `modelagree validate` 预检命令 | T0.1 | S | P1 |
+| 12 | T2.2 | `modelagree export` CSV 导出 | T1.1 | S | P1 |
+| 13 | T2.3 | 多人工标注员与人类基线 | T1.5 | L | P0 |
+| 14 | T2.4 | 多数投票参考标签策略 | T2.3 | M | P0 |
+| 15 | T2.6 | MHS 数据集转换器 | T2.4 | M | P0 |
+| 16 | T2.5 | 使用配方文档（含自一致性） | T2.6 | S | P1 |
+| 17 | T4.1 | 打包与 PyPI 发布流程 | — | S | P1 |
+| 18 | T4.3 | 社区文件（CONTRIBUTING、CITATION 等） | T0.2 | S | P1 |
+| 19 | T4.4 | 人类基线教程 | T2.6 | S | P1 |
+| 20 | T4.2 | README 截图与对比说明 | T4.4 | S | P1 |
+| 暂缓 | T3.2 | OpenAI 兼容接口 provider（vLLM/Ollama 等） | T3.1 | M | P2 |
+| 暂缓 | T3.3 | 并发执行 `--workers` | T3.1 | M | P2 |
+| 暂缓 | T3.4 | 真实 API 冒烟脚本（不进 CI） | T3.1 | S | P2 |
+| 暂缓 | T4.5 | JOSS 论文草稿（可选） | v0.3.0 | M | P2 |
+
+T1.2 到 T1.5 都要改 `metrics.py`，T2.3 到 T2.6 环环相扣，所以都必须按顺序执行，不要并行。
 
 **里程碑：**
 
-- **v0.2.0“统计核心”**：T0.1–T0.3、T1.1–T1.6、T2.1、T2.2、T4.1。
-- **v0.3.0“人类基线与更多模型”**：T2.3–T2.5、T3.1–T3.4、T4.2–T4.4。
-- **之后**：T4.5，以及第 5 节里明确暂不做的事项（需要时重新评估）。
+- **v0.2.0“统计核心 + Claude”**：顺序 1–12，加上 T4.1。
+- **v0.3.0“人类基线”**：顺序 13–20。
+- **之后**：暂缓的任务，以及第 5 节里明确暂不做的事项（需要时重新评估）。
 
 ---
 
@@ -319,7 +330,7 @@ T1.2 到 T1.5 都要改 `metrics.py`，所以按顺序执行，不要并行。
 
 **测试：** 手算一个 3 条目 × 2 标注员 × 1 模型的小例子，覆盖所有新键；无 annotations 时不出现 `human_baseline`。
 
-#### T2.4 多数投票参考标签策略（P2）
+#### T2.4 多数投票参考标签策略（P0，MHS 没有单一金标，依赖它）
 
 - 新配置键 `reference_policy: labels | annotator_majority`，默认 `labels`。默认值时**不写入**冻结配置（AGENTS.md 第 6 条）。
 - `annotator_majority`：categorical/ordinal 取严格过半（多于有效标注数的一半）的值，否则为未知；
@@ -327,19 +338,55 @@ T1.2 到 T1.5 都要改 `metrics.py`，所以按顺序执行，不要并行。
 - 派生出的参考标签记录在 `scores.json` 中，manifest 保留原始数据。
 - 文档说明：用多数投票做参考后再和单个标注员比较存在偏差，`human_baseline` 不使用派生参考。
 
-#### T2.5 使用配方文档（P2）
+#### T2.5 使用配方文档（P1）
 
 新增 `docs/recipes.md`，内容包括：
 
-- **自一致性 / 重测信度：** 同一个 provider 模型配置两次，使用不同的 `id`，然后看 pairwise 一致性。说明 temperature 设置的影响，以及 provider 侧可能存在缓存。
+- **自一致性 / 重测信度（主要配方）：** 同一个模型配置两次，使用不同的 `id`（例如 `haiku-a`、`haiku-b`，`model` 和 `parameters` 完全相同），
+  然后看 pairwise 一致性和 `multi_rater.models` 的 alpha。说明这衡量的是模型自身输出的随机性；
+  Claude Haiku 5.5 不接受采样参数，所以无法通过 temperature=0 消除随机性，这个配方正是用来量化它的。
+  在 `examples/mhs.yaml` 中以注释形式给出第二个 ID 的写法。
 - **参数对比：** 同一模型、不同参数，配置为不同 ID。
 - **先小规模试跑：** 用 `--limit` 试跑，再换新的 `run_dir` 跑全量。
 - **人类基线：** 指向 T4.4 的教程。
 
+#### T2.6 MHS 数据集转换器
+
+**目的：** 把 Measuring Hate Speech 语料（UC Berkeley D-Lab，CC BY 4.0）转换成带 `annotations` 的 JSONL，作为主案例数据。
+与 `scripts/prepare_crisismmd.py` 一样，只读维护者本地下载的副本，**不联网、不下载、不在仓库中包含任何真实数据**。
+
+**输入：** 维护者自行把官方 parquet 导出为 CSV（在 `docs/mhs.md` 中给出一行导出命令，例如用 pandas；pandas 和 pyarrow 不是本项目的依赖）。
+每行是一条（评论, 标注员）记录。
+
+**改动：**
+
+- `scripts/prepare_mhs.py INPUT_CSV --fields FIELDS_YAML [--output PATH] [--min-annotators 3] [--sample N] [--seed 0]`，只用标准库。
+- 字段映射放在 `examples/mhs-fields.yaml`：为每个选用的列声明字段名、任务类型（ordinal 或 categorical）、
+  数字编码到标签名的映射，以及等级顺序。首批字段为 `hatespeech`、`insult`、`violence`。
+  **编码含义和问题措辞必须来自数据集卡片或原论文的 codebook。** Codex 环境可能无法联网，
+  这时写出草稿映射，并在每个映射上加 `# TODO: verify against the dataset card` 注释，在 PR 中列出需要维护者核对的项，**不得凭记忆猜测**。
+- 转换规则：
+  - 每条评论生成一个条目：`id` 为 `mhs-<comment_id>`；`text` 为评论文本；
+    `annotations` 为 `{annotator_id: {field: label}}`；`metadata` 只保留 `platform`。
+  - 不写 `labels`，参考标签由 T2.4 的 `reference_policy: annotator_majority` 派生。
+  - **不输出标注员人口学信息和 target 相关列**，它们与本评估无关，且涉及隐私。
+  - 遇到映射表以外的编码直接报错，不得静默丢弃；同一 `comment_id` 出现不同文本时报错；同一（评论, 标注员）重复且取值冲突时报错。
+  - 只保留有效标注员数不少于 `--min-annotators` 的评论；先按 `comment_id` 排序，再用固定 seed 抽样 `--sample` 条。
+    抽样实现要保证跨 Python 版本结果一致（参照 T1.5 的做法）。
+  - 输出是原子写入；打印转换计数、被过滤的评论数、每个字段的标注分布。
+- `examples/mhs.yaml`：使用 `reference_policy: annotator_majority`；只有一个模型
+  `id: haiku`、`provider: anthropic`、`model: claude-haiku-5-5`，参数与 T3.1 示例相同；
+  另以注释给出自一致性用的第二个 ID（见 T2.5）。
+- `examples/mhs-prompt.txt`：尽量复现原始标注问卷的问题和选项措辞，并要求模型只输出 JSON。措辞同样标注 TODO，由维护者核对。
+- `.gitignore` 增加 `data/mhs/` 和 `measuring-hate-speech*`；`docs/mhs.md` 写明数据来源、许可、引用方式、内容警示，以及完整的运行步骤。
+
+**测试：** 只使用虚构的、无冒犯内容的 CSV 行。覆盖：映射、过滤、抽样确定性、各种报错情形、输出中不含人口学列。
+
 ---
 
-### Phase 3：更多模型
+### Phase 3：模型接入
 
+T3.1 排在第 2 个执行（见第 2 节），T3.2 到 T3.4 暂缓。
 所有 provider 都遵守现有模式：只用标准库 HTTPS、固定端点（T3.2 例外，见下）、凭据只来自环境变量、拒绝重定向、错误只记录固定错误码。
 测试一律 mock `http.open_request`，参照 `tests/test_providers.py`。新增的密钥变量要加入 `security.KEY_VARIABLES`。
 
@@ -351,18 +398,27 @@ T1.2 到 T1.5 都要改 `metrics.py`，所以按顺序执行，不要并行。
   `system` 为冻结的 prompt；`messages: [{"role":"user","content":[{"type":"text","text":...}, 图片块]}]`。
   图片块为 `{"type":"image","source":{"type":"base64","media_type":...,"data":...}}`。
   内容块顺序与现有 provider 保持一致（文本在前、图片在后），以保证跨模型可比，并在 DESIGN.md 中记录这一选择。
-- 参数白名单：`max_output_tokens`（正整数）；`effort`（映射到 `output_config.effort`，取值 `low|medium|high|xhigh|max`）；
-  `temperature`（**[0,1]**，与 OpenAI 的 [0,2] 不同，`validate_parameters` 需要按 provider 区分范围）；`top_p`（[0,1]）；`top_k`（正整数）。
-  文档写明：当前一代 Claude 模型会以 HTTP 400 拒绝非默认的采样参数，这类请求会记录为 permanent error；采样参数只对较旧的模型有效。
-- **不要**发送 `fallbacks` 或任何服务端回退参数（AGENTS.md 第 10 条），也不要设置 `thinking`。
+- 参数白名单**只有两项**：`max_output_tokens`（正整数）和 `effort`（映射到 `output_config.effort`，取值 `low|medium|high|xhigh|max`）。
+  不支持 `temperature`、`top_p`、`top_k`：目标模型 Claude Haiku 5.5 会以 HTTP 400 拒绝非默认的采样参数，所以直接在配置校验时拒绝，避免浪费请求。
+- **不要**发送 `fallbacks` 或任何服务端回退参数（AGENTS.md 第 10 条），也不要设置 `thinking`，使用模型默认的 adaptive thinking。
+- **Claude Haiku 5.5 相关说明**（写进 README 的 “Real providers” 小节；T0.2 会把它迁到 `docs/providers.md`）：
+  - 模型 ID 为 `claude-haiku-5-5`；价格为每百万 token 输入 $0.10、输出 $0.50（提示长度 100K token 以内）。
+  - 默认开启 adaptive thinking，`effort` 默认为 `medium`。思考 token 计入 `max_tokens` 和输出费用。
+    分类任务推荐 `effort: low`、`max_output_tokens: 2048`。
+  - 如果原始响应中的 `stop_reason` 为 `max_tokens`，说明输出被截断，应调大 `max_output_tokens` 并换新的 `run_dir` 重跑。
+  - 服务端没有拒答回退；拒答按无效预测计入，正是 failure-as-wrong 下界要反映的情况。
+- 新增 `examples/crisismmd-claude.yaml`：数据集、prompt、schema 与 `examples/crisismmd.yaml` 相同，`run_dir: ../runs/crisismmd-claude`，
+  只有一个模型：`id: haiku`、`provider: anthropic`、`model: claude-haiku-5-5`、`timeout_seconds: 60`、
+  `parameters: {max_output_tokens: 2048, effort: low}`。不修改原有的 `examples/crisismmd.yaml`。
 - 响应解析：拼接所有 `type == "text"` 的内容块文本，跳过 thinking 等其他块。
   `stop_reason`（包括 `refusal`、`max_tokens`）保留在原始 HTTP 响应中；拒答或截断时照常保存为 completed，评分时按无效处理。
   用量：`input_tokens`、`output_tokens`；`total_tokens` 记为 `None`，API 不直接提供，也不自行推算。
 - 529 和其他 5xx 已经按可重试处理，确认现有逻辑覆盖即可。
 
-**测试：** 请求构造（请求头含版本号，`api_request` 中没有 key）、图片块、用量、thinking 块被跳过、refusal、缺少 `max_output_tokens` 的配置报错、temperature>1 被拒、`ANTHROPIC_API_KEY` 被脱敏。
+**测试：** 请求构造（请求头含版本号，`api_request` 中没有 key）、图片块、用量、thinking 块被跳过、refusal、`max_tokens` 截断、
+缺少 `max_output_tokens` 的配置报错、`temperature` 等未列出的参数被拒、`effort` 非法取值被拒、`ANTHROPIC_API_KEY` 被脱敏。
 
-#### T3.2 OpenAI 兼容接口 provider
+#### T3.2 OpenAI 兼容接口 provider（暂缓）
 
 - `provider: openai_compatible`，模型级必填键 `base_url`（只允许出现在这个 provider 上，会进入指纹）。
   可选环境变量 `OPENAI_COMPATIBLE_API_KEY`，设置了才发送 `Authorization: Bearer`。
@@ -377,7 +433,7 @@ T1.2 到 T1.5 都要改 `metrics.py`，所以按顺序执行，不要并行。
 
 **测试：** URL 校验的各种拒绝情形；有 key 和无 key 两种请求；图片；字符串和列表两种 content；refusal；用量。
 
-#### T3.3 并发执行 `--workers N`（P2）
+#### T3.3 并发执行 `--workers N`（暂缓）
 
 - `run` 新增 `--workers N`（默认 1，此时行为与现在完全一致）。用 `ThreadPoolExecutor` 并发处理待请求的（模型, 条目）对。
   每个任务内部沿用现有的重试循环，写入各自独立的记录文件。`--workers` 不进入指纹。
@@ -387,7 +443,7 @@ T1.2 到 T1.5 都要改 `metrics.py`，所以按顺序执行，不要并行。
 
 **测试：** mock provider 下 `--workers 4` 与 `--workers 1` 产生的记录，除时间戳和延迟外完全相同；可重试错误的行为不变；不会有两个任务写同一路径。
 
-#### T3.4 真实 API 冒烟脚本（P2，不进 CI）
+#### T3.4 真实 API 冒烟脚本（暂缓，不进 CI）
 
 `scripts/live_smoke.py CONFIG`：只有设置了 `MODELAGREE_LIVE=1` 才运行；对每个模型只跑前 2 个条目，写到临时 `run_dir`；打印每条记录的状态和解析结果。
 用途是让维护者用真实 key 验证 provider 兼容性。不被 pytest 收集，不在 CI 中运行。
@@ -434,9 +490,11 @@ T1.2 到 T1.5 都要改 `metrics.py`，所以按顺序执行，不要并行。
 
 这些事 Codex 做不了，或者不应该替你做：
 
-1. **真实数据验证：** 下载 CrisisMMD v2.0，运行转换器，再用真实 key 跑 `--limit 12` 的小规模评估（会产生少量 API 费用）。
+1. **真实数据验证（T3.1 合并后）：** 下载 CrisisMMD v2.0，运行转换器，设置 `ANTHROPIC_API_KEY`，
+   用 `examples/crisismmd-claude.yaml` 先跑 `--limit 12`，再跑 `--limit 50`（新的 `run_dir`）。费用在 1 美元以内。
    把发现的问题提成 issue。这是 README 里 “Known limitations” 中两条限制的唯一解法。
-2. **T3.4 冒烟测试：** 新 provider 合并后，用真实 key 跑一次。
+2. **MHS 主案例（T2.6 合并后）：** 下载 MHS 并导出 CSV；核对 `examples/mhs-fields.yaml` 和 `examples/mhs-prompt.txt` 中所有 TODO；
+   先用 `--limit 50` 试跑，看报告里的 token 合计和 `stop_reason`，再跑 1000 条。
 3. **PyPI：** 注册账号，为本仓库配置 Trusted Publisher（workflow 为 `release.yml`，environment 为 `pypi`），然后推送 `v0.2.0` 标签。
 4. **身份信息：** 填写 `pyproject.toml` 的 `authors`、`CITATION.cff`、`SECURITY.md` 的联系方式。
 5. **GitHub 仓库设置：** 填写 description；topics 建议加 `llm`、`annotation`、`inter-rater-reliability`、`cohens-kappa`、`krippendorff-alpha`、`evaluation`。
