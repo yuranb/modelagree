@@ -5,6 +5,14 @@ The format follows Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- Recorded the maintainer's 2026-10-21 partial live check: real CrisisMMD v2.0
+  conversion with annotations, one event's images, and `--skip-missing-images`;
+  Anthropic `claude-haiku-5-5` completed 12/12 and 50/50 requests with zero
+  format violations. Scope was limited to one event's first 50 records;
+  full-archive compatibility and other providers remain unverified.
+
 ### Added
 
 - Anthropic Messages provider with environment-only credentials, text/image

@@ -168,8 +168,14 @@ archive.
 fingerprint is not verification of its current contents. Git-ignore protection
 covers conventional paths, not every configurable output directory. Mocked HTTP
 and synthetic TSV tests do not establish live-provider or real-archive
-compatibility. See the README's [Known limitations](README.md#known-limitations)
-for these boundaries and the output-path examples.
+compatibility. On 2026-10-21, the maintainer ran the CrisisMMD v2.0 converter on
+a real archive with annotations and one event's images, using
+`--skip-missing-images`. The `anthropic` provider then completed 12/12 and 50/50
+live requests with `claude-haiku-5-5`, with zero format violations in both runs.
+This was a partial check covering one event and its first 50 records;
+full-archive compatibility and other providers remain unverified. See the README's
+[Known limitations](README.md#known-limitations) for these boundaries and the
+output-path examples.
 
 **Compatibility baseline.** The synthetic demo scores in `tests/golden/` were
 captured before the T0.1 changes using the 0.1.0 implementation. Recursive
@@ -197,5 +203,5 @@ field invalid, and records `anthropic_refusal` or `anthropic_max_tokens` as a
 format violation. This is derived in memory without rewriting completed
 records or discarding their source text. It also prevents parseable partial
 JSON from being counted as valid. Existing providers and frozen demo scores
-retain their behavior. Mocked HTTP tests cover the new adapter; no live API
-validation is claimed.
+retain their behavior. Mocked HTTP tests cover the new adapter; the maintainer's
+partial live check is described under Known limitations above.

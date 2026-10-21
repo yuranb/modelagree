@@ -325,8 +325,13 @@ images are included in this repository; converter tests use invented TSV rows.
   rules do not protect files that have already been tracked.
 - Provider tests use mocked HTTP. They check request construction and response
   handling, not live API or model compatibility.
-- Converter tests use synthetic TSV rows and local test images. Compatibility
-  with an actual downloaded CrisisMMD archive has not been verified.
+- Converter tests use synthetic TSV rows and local test images. On 2026-10-21,
+  the maintainer ran the CrisisMMD v2.0 converter on a real archive with
+  annotations and one event's images, using `--skip-missing-images`.
+- In that live check, the `anthropic` provider completed 12/12 and 50/50 requests
+  with `claude-haiku-5-5`, with zero format violations in both runs. This was a
+  partial check covering one event and its first 50 records. Full-archive
+  compatibility and other providers remain unverified.
 
 These examples show which output paths the shipped Git rules ignore:
 
