@@ -12,6 +12,10 @@ The format follows Keep a Changelog.
   Anthropic `claude-haiku-5-5` completed 12/12 and 50/50 requests with zero
   format violations. Scope was limited to one event's first 50 records;
   full-archive compatibility and other providers remain unverified.
+- Shortened the README and moved detailed configuration, run artifacts,
+  metrics, providers, and CrisisMMD instructions into five linked guides.
+- Documented macOS python.org certificate setup for `tls_error` and the need
+  for a new run directory after permanent errors.
 
 ### Added
 
