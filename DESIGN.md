@@ -11,7 +11,7 @@ location does not change inputs. The manifest records input content and a canoni
 SHA-256 fingerprint. Resumption compares freshly loaded inputs with that recorded
 fingerprint; scoring does not verify the current manifest contents. The same loaded
 prompt text is reused for every request, and reference labels are withheld from
-providers.
+providers. See the [configuration reference](docs/configuration.md).
 
 **Stable identities.** Model definitions become an ID-keyed mapping and dataset
 IDs must be unique. Provider model names are separate from evaluation IDs, so
@@ -48,7 +48,8 @@ execution without server support.
 **Restricted retries.** Infrastructure failures such as timeouts, rate limiting,
 and server errors receive a bounded number of attempts with capped exponential
 backoff. Other errors and invalid model output do not. Attempt histories retain
-failures so latency and operational problems remain visible.
+failures so latency and operational problems remain visible. See
+[provider setup and troubleshooting](docs/providers.md#troubleshooting).
 
 **Parsing with format accounting.** A directly supplied JSON object, a fenced
 object, or a recoverable object surrounded by prose can provide labels. Fences
@@ -199,3 +200,11 @@ records or discarding their source text. It also prevents parseable partial
 JSON from being counted as valid. Existing providers and frozen demo scores
 retain their behavior. Mocked HTTP tests cover the new adapter; no live API
 validation is claimed.
+
+**Documentation layout (T0.2).** The README introduces annotation agreement,
+keeps the known-limitations table visible, and links to detailed configuration,
+run-artifact, metrics, provider, and CrisisMMD guides. The screenshot reference
+is a commented placeholder pending T4.2. Detailed content is migrated from the
+README; provider troubleshooting documents certificate setup and a fresh run
+directory after permanent TLS errors. The README's retained Known limitations
+anchor remains valid.
