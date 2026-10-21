@@ -208,3 +208,11 @@ is a commented placeholder pending T4.2. Detailed content is migrated from the
 README; provider troubleshooting documents certificate setup and a fresh run
 directory after permanent TLS errors. The README's retained Known limitations
 anchor remains valid.
+
+
+**Development tooling and package metadata (T0.3).** Ruff is an optional `dev`
+extra and runs in a separate CI lint job with only `E9`, `F63`, `F7`, `F82`, and
+`F401` enabled. No formatter is introduced. The CLI's `--version` action uses
+`modelagree.__version__`; a test checks the output and the version declared in
+`pyproject.toml`. Package keywords, classifiers, and Homepage/Issues/Changelog
+URLs describe the existing project. Author information remains maintainer-owned.

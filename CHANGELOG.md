@@ -14,6 +14,11 @@ The format follows Keep a Changelog.
 
 ### Added
 
+- Optional Ruff development extra and a CI lint job limited to `E9`, `F63`,
+  `F7`, `F82`, and `F401`, without formatting.
+- `modelagree --version`, checked against the package version in tests, plus
+  package keywords, classifiers, and Homepage/Issues/Changelog URLs.
+
 - Anthropic Messages provider with environment-only credentials, text/image
   inputs, required output limits, optional effort, and a Haiku 5.5 CrisisMMD
   example. Refusal and token-limit stops remain immutable completed responses
