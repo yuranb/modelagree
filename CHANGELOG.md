@@ -5,6 +5,13 @@ The format follows Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- Shortened the README and moved detailed configuration, run artifacts,
+  metrics, providers, and CrisisMMD instructions into five linked guides.
+- Documented macOS python.org certificate setup for `tls_error` and the need
+  for a new run directory after permanent errors.
+
 ### Added
 
 - Anthropic Messages provider with environment-only credentials, text/image
