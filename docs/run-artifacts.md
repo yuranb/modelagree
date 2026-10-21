@@ -29,6 +29,7 @@ invalid fields, fences, duplicate labels, and missing reference labels.
 ## Commands
 
 ```sh
+modelagree --version               # prints the installed modelagree version
 modelagree run examples/demo.yaml   # also resumes an interrupted run
 modelagree score runs/demo          # writes scores.json and prints it
 modelagree report runs/demo         # recomputes scores, writes report.html
@@ -81,6 +82,17 @@ can require another request; exactly-once remote execution is not promised.
 GitHub Actions runs them on Python 3.10, 3.12, and 3.14 for pushes and PRs.
 Runtime dependencies are limited to PyYAML; metrics and reporting use the
 standard library.
+
+Install the optional development tools and run the same lint check as CI:
+
+```sh
+python -m pip install -e '.[dev]'
+ruff check src tests scripts
+```
+
+Ruff enables only `E9`, `F63`, `F7`, `F82`, and `F401`; this check does not
+format files. `modelagree --version` prints `modelagree 0.1.0`, sourced from
+`modelagree.__version__`. A test checks it against `pyproject.toml`.
 
 ## Docker demo
 

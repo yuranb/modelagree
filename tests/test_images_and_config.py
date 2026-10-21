@@ -1,4 +1,3 @@
-import json
 
 import pytest
 import yaml
@@ -93,7 +92,7 @@ def test_limit_does_not_load_unselected_images(config_factory):
 def test_modified_image_snapshot_cannot_be_sent(config_factory,tiny_image,monkeypatch):
     from pathlib import Path
     from modelagree import runner
-    from modelagree.providers.base import ProviderError, Response
+    from modelagree.providers.base import ProviderError
     class Down:
         def generate(self,request): raise ProviderError('timeout',True)
     monkeypatch.setattr(runner,'create_provider',lambda m:Down())

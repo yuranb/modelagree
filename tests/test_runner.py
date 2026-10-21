@@ -3,7 +3,6 @@ import socket
 import warnings
 
 import pytest
-import yaml
 from pytest_socket import SocketBlockedError
 
 from modelagree import runner

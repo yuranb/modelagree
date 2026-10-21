@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 
+from . import __version__
 from .report import report
 from .runner import run
 from .scoring import score
@@ -10,6 +11,7 @@ from .security import redact
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="modelagree", description="Audit model label agreement")
+    parser.add_argument("--version", action="version", version=f"modelagree {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)
     run_parser = commands.add_parser("run", help="Run or resume a frozen config")
     run_parser.add_argument("config")
