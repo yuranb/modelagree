@@ -7,6 +7,11 @@ The format follows Keep a Changelog.
 
 ### Added
 
+- Anthropic Messages provider with environment-only credentials, text/image
+  inputs, required output limits, optional effort, and a Haiku 5.5 CrisisMMD
+  example. Refusal and token-limit stops remain immutable completed responses
+  but score as invalid; mocked tests cover requests, usage, retries, and redaction.
+
 - Frozen 0.1.0 demo scores and manifest fixtures, with compatibility tests for
   existing score values, run fingerprints, and HTML report generation.
   Additional score keys are allowed; only latency totals are excluded.

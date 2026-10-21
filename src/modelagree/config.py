@@ -43,11 +43,17 @@ def load_dataset(path, limit=None):
 
 def validate_parameters(provider, parameters):
     keys = {"mock": set(), "openai": {"temperature", "top_p", "max_output_tokens", "reasoning_effort"},
-            "gemini": {"temperature", "top_p", "top_k", "max_output_tokens", "seed"}}
+            "gemini": {"temperature", "top_p", "top_k", "max_output_tokens", "seed"},
+            "anthropic": {"max_output_tokens", "effort"}}
     if not isinstance(parameters, dict) or set(parameters) - keys[provider]:
         raise ValueError("Unsupported provider parameters; credentials belong only in the environment")
+    if provider == "anthropic" and "max_output_tokens" not in parameters:
+        raise ValueError("anthropic requires parameters.max_output_tokens")
     for key, value in parameters.items():
-        if key == "reasoning_effort":
+        if key == "effort":
+            if value not in ("low", "medium", "high", "xhigh", "max"):
+                raise ValueError("Unsupported effort")
+        elif key == "reasoning_effort":
             if value not in ("none", "minimal", "low", "medium", "high", "xhigh"):
                 raise ValueError("Unsupported reasoning_effort")
         elif key in {"max_output_tokens", "top_k", "seed"}:
@@ -95,8 +101,8 @@ def load_config(path, limit=None):
             raise ValueError("Model ids must be unique nonempty strings")
         seen.add(mid)
         provider = model.get("provider")
-        if not isinstance(provider, str) or provider not in {"mock", "openai", "gemini"}:
-            raise ValueError("provider must be mock, openai, or gemini")
+        if not isinstance(provider, str) or provider not in {"mock", "openai", "gemini", "anthropic"}:
+            raise ValueError("provider must be mock, openai, gemini, or anthropic")
         if not isinstance(model.get("model"), str) or not model["model"]:
             raise ValueError("Each model needs a model identifier")
         if model["model"].startswith(("REPLACE_", "YOUR_", "<")):

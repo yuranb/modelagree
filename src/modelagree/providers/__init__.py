@@ -10,4 +10,7 @@ def create_provider(model):
     if model["provider"] == "gemini":
         from .gemini import GeminiProvider
         return GeminiProvider(model)
+    if model["provider"] == "anthropic":
+        from .anthropic import AnthropicProvider
+        return AnthropicProvider(model)
     raise ValueError("Unsupported provider")

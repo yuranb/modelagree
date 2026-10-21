@@ -73,7 +73,7 @@ models:
 | `levels` | Distinct strings, ordered lowest to highest, for ordinal tasks. |
 | `models` | Nonempty list of model definitions. |
 | `id` | Unique local evaluation ID; all comparisons and storage use it, never list positions. |
-| `provider` | `mock`, `openai` (Responses API), or `gemini` (generateContent API). |
+| `provider` | `mock`, `openai` (Responses API), `gemini` (generateContent API), or `anthropic` (Messages API). |
 | `model` | Provider model ID; separate from the local evaluation ID. |
 | `parameters` | Provider options; the mock provider accepts an empty mapping. |
 | `responses` | Mock-only JSON file mapping item IDs to response strings or objects with `text`, optional `input_tokens`, `output_tokens`, `total_tokens`. |
@@ -85,8 +85,11 @@ models:
 | --- | --- |
 | `openai` | `temperature`, `top_p`, `max_output_tokens`, `reasoning_effort` |
 | `gemini` | `temperature`, `top_p`, `top_k`, `max_output_tokens`, `seed` |
+| `anthropic` | `max_output_tokens` (required), `effort` |
 
-Omitted parameters use provider defaults; model-specific support still applies.
+Omitted optional parameters use provider defaults; model-specific support still applies.
+Anthropic requires a positive integer `max_output_tokens` and accepts only
+`effort: low|medium|high|xhigh|max` as an additional parameter.
 `reasoning_effort` accepts `none`, `minimal`, `low`, `medium`, `high`, or `xhigh`;
 choose a value supported by your model. Temperature must be in [0, 2], top-p in
 [0, 1], seed a nonnegative integer, and token/top-k limits positive integers.
@@ -199,7 +202,7 @@ standard library.
 ## Real providers and CrisisMMD
 
 No real API calls are made by the tests or the demo. Authentication reads
-`GEMINI_API_KEY` and/or `OPENAI_API_KEY` only from the process environment.
+`GEMINI_API_KEY`, `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY` only from the process environment.
 Config, model, provider-parameter, and schema definitions reject unsupported
 options, including credential options. `.env` is ignored by Git and is not
 loaded by the program.
@@ -239,6 +242,38 @@ credential redaction.
 The adapters follow the official [OpenAI Responses reference](https://developers.openai.com/api/reference/cli/resources/responses/methods/create),
 [OpenAI image-input guide](https://developers.openai.com/api/docs/guides/images-vision),
 and [Gemini generateContent reference](https://ai.google.dev/api/generate-content).
+
+### Anthropic / Claude Haiku 5.5
+
+Use `provider: anthropic` with `ANTHROPIC_API_KEY` set in the environment.
+The adapter sends text followed by any image to the fixed Messages endpoint,
+with the frozen prompt as `system` and API version `2023-06-01`. It does not
+send thinking overrides, fallback options, or cache controls.
+
+The target model is `claude-haiku-5-5`. For prompts up to 100,000 tokens,
+its price is $0.10 per million input tokens and $0.50 per million output tokens.
+Adaptive thinking is on by default and effort defaults to `medium`; thinking
+tokens count toward `max_tokens` and output charges. For classification, start
+with `effort: low` and `max_output_tokens: 2048`. The output limit is required;
+there is no implicit default. `temperature`, `top_p`, and `top_k` are rejected
+by local configuration validation because Haiku 5.5 rejects non-default
+sampling settings with HTTP 400. See the official
+[Haiku 5.5 overview](https://platform.claude.com/docs/en/models/haiku-5-5/overview)
+and [migration guide](https://platform.claude.com/docs/en/models/haiku-5-5/migration-guide).
+
+All text blocks are concatenated; thinking and other block types are skipped.
+Input and output usage are recorded directly, while `total_tokens` stays null
+because the API does not supply it. The saved HTTP envelope retains
+`stop_reason`. A `refusal` or `max_tokens` stop is saved as `completed` and
+scored as invalid for every field, even if its text is parseable JSON. These
+failures contribute to failure-as-wrong bounds and are not retried. Haiku 5.5
+has no server-side refusal fallback. For `max_tokens`, increase
+`max_output_tokens` and use a new `run_dir`; completed records stay immutable.
+
+After preparing your local CrisisMMD dataset, run
+`modelagree run examples/crisismmd-claude.yaml`. This example uses only Haiku
+with a 60-second timeout. Tests use mocked HTTP and do not establish live API
+compatibility.
 
 Obtain and extract [CrisisMMD v2.0](https://crisisnlp.qcri.org/crisismmd) yourself.
 The converter only reads your local copy; it never downloads data. Put the

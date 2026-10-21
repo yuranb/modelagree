@@ -1,5 +1,6 @@
 """Reference and pairwise agreement, joined by stable model and item ids."""
 import itertools
+import json
 from collections import Counter
 from pathlib import Path
 
@@ -45,6 +46,15 @@ def score(run_dir):
             if rec and (rec["model_id"] != mid or rec["item_id"] != item["id"]):
                 raise ValueError("Response identity does not match its storage path")
             rec["parsed"] = parse_response(rec["raw_response"], schema) if rec.get("status") == "completed" else None
+            if rec.get("status") == "completed" and manifest["models"][mid]["provider"] == "anthropic":
+                try:
+                    envelope = json.loads(rec.get("raw_http_response") or "{}")
+                except (ValueError, RecursionError):
+                    envelope = {}
+                reason = envelope.get("stop_reason") if isinstance(envelope, dict) else None
+                if reason in ("refusal", "max_tokens"):
+                    rec["parsed"] = parse_response("", schema)
+                    rec["parsed"]["format_violations"] = ["anthropic_" + reason]
             records[mid][item["id"]] = rec
     models = {}
     for mid, by_item in records.items():
