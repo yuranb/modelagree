@@ -170,3 +170,13 @@ covers conventional paths, not every configurable output directory. Mocked HTTP
 and synthetic TSV tests do not establish live-provider or real-archive
 compatibility. See the README's [Known limitations](README.md#known-limitations)
 for these boundaries and the output-path examples.
+
+**Compatibility baseline.** The synthetic demo scores in `tests/golden/` were
+captured before the T0.1 changes using the 0.1.0 implementation. Recursive
+subset comparison permits additive dictionary keys while preserving existing
+values and list lengths/order, with relative float tolerance of 1e-12. Only
+`resources.latency_seconds.total` and
+`resources.attempt_latency_seconds.total` are omitted; their denominators
+remain checked. Exact run-fingerprint equality guards the frozen defaults.
+A separately saved 0.1.0 demo manifest exercises reporting without regenerating
+that manifest under future code. Neither test requires a live provider.

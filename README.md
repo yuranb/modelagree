@@ -310,3 +310,11 @@ docker run --rm -v "$PWD/runs:/app/runs" modelagree
 The image's default command runs and reports on the offline demo. Building the
 image installs Python packages; running the demo itself does not use a network.
 See [DESIGN.md](DESIGN.md) for the reasoning behind the implementation.
+
+## Compatibility tests
+
+`python -m pytest` checks the offline demo against frozen 0.1.0 scores and
+requires the same run fingerprint. New score keys are allowed, but existing
+values and list order must remain compatible; only the two resource latency
+totals are excluded. A saved 0.1.0 manifest also exercises report generation.
+See [CHANGELOG.md](CHANGELOG.md) for changes.

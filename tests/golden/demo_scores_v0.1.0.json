@@ -1,0 +1,668 @@
+{
+  "version": 1,
+  "run_fingerprint": "9db669db7360eab0f101c5473f53884601022ea0b57c2e304f3c65e0ce0b97fe",
+  "models": {
+    "mock-a": {
+      "fields": {
+        "relevance": {
+          "task_type": "categorical",
+          "counts": {
+            "total": 12,
+            "known_reference": 11,
+            "unknown_reference": 1,
+            "invalid_prediction": 2,
+            "invalid_prediction_known_reference": 1,
+            "invalid_prediction_unknown_reference": 1,
+            "eligible": 10
+          },
+          "metrics": {
+            "exact_agreement": {
+              "value": 1.0,
+              "numerator": 10,
+              "denominator": 10
+            },
+            "cohen_kappa": {
+              "value": 1.0,
+              "numerator": 0.31999999999999995,
+              "denominator": 0.31999999999999995,
+              "sample_size": 10,
+              "observed_agreement": 1.0,
+              "expected_agreement": 0.68,
+              "undefined_reason": null
+            }
+          },
+          "failure_as_wrong": {
+            "exact_agreement": {
+              "value": 0.9090909090909091,
+              "numerator": 10,
+              "denominator": 11
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "relevant",
+              "unrelated"
+            ],
+            "rows": "reference",
+            "columns": "prediction",
+            "counts": [
+              [
+                8,
+                0
+              ],
+              [
+                0,
+                2
+              ]
+            ],
+            "denominator": 10
+          }
+        },
+        "severity": {
+          "task_type": "ordinal",
+          "counts": {
+            "total": 12,
+            "known_reference": 10,
+            "unknown_reference": 2,
+            "invalid_prediction": 3,
+            "invalid_prediction_known_reference": 1,
+            "invalid_prediction_unknown_reference": 2,
+            "eligible": 9
+          },
+          "metrics": {
+            "exact_agreement": {
+              "value": 1.0,
+              "numerator": 9,
+              "denominator": 9
+            },
+            "cohen_kappa": {
+              "value": 1.0,
+              "numerator": 0.6419753086419753,
+              "denominator": 0.6419753086419753,
+              "sample_size": 9,
+              "observed_agreement": 1.0,
+              "expected_agreement": 0.35802469135802467,
+              "undefined_reason": null
+            },
+            "predictions_above": {
+              "value": 0.0,
+              "numerator": 0,
+              "denominator": 9
+            },
+            "predictions_below": {
+              "value": 0.0,
+              "numerator": 0,
+              "denominator": 9
+            },
+            "differences_at_least_two": {
+              "value": 0.0,
+              "numerator": 0,
+              "denominator": 9
+            }
+          },
+          "failure_as_wrong": {
+            "exact_agreement": {
+              "value": 0.9,
+              "numerator": 9,
+              "denominator": 10
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "none",
+              "minor",
+              "major"
+            ],
+            "rows": "reference",
+            "columns": "prediction",
+            "counts": [
+              [
+                3,
+                0,
+                0
+              ],
+              [
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                4
+              ]
+            ],
+            "denominator": 9
+          }
+        },
+        "needs": {
+          "task_type": "multi_label",
+          "counts": {
+            "total": 12,
+            "known_reference": 11,
+            "unknown_reference": 1,
+            "invalid_prediction": 3,
+            "invalid_prediction_known_reference": 2,
+            "invalid_prediction_unknown_reference": 1,
+            "eligible": 9
+          },
+          "metrics": {
+            "exact_set_agreement": {
+              "value": 1.0,
+              "numerator": 9,
+              "denominator": 9
+            },
+            "partial_overlap": {
+              "value": 0.5555555555555556,
+              "numerator": 5,
+              "denominator": 9
+            },
+            "mean_jaccard": {
+              "value": 1.0,
+              "numerator": 9.0,
+              "denominator": 9
+            },
+            "micro_f1": {
+              "value": 1.0,
+              "numerator": 16,
+              "denominator": 16,
+              "sample_size": 9,
+              "true_positive": 8,
+              "false_positive": 0,
+              "false_negative": 0
+            }
+          },
+          "failure_as_wrong": {
+            "exact_set_agreement": {
+              "value": 0.8181818181818182,
+              "numerator": 9,
+              "denominator": 11
+            },
+            "partial_overlap": {
+              "value": 0.45454545454545453,
+              "numerator": 5,
+              "denominator": 11
+            },
+            "mean_jaccard": {
+              "value": 0.8181818181818182,
+              "numerator": 9.0,
+              "denominator": 11
+            },
+            "micro_f1": {
+              "value": 0.7272727272727273,
+              "numerator": 16,
+              "denominator": 22,
+              "sample_size": 11,
+              "failure_error_count": 6
+            }
+          }
+        }
+      },
+      "resources": {
+        "items": 12,
+        "completed": 12,
+        "statuses": {
+          "completed": 12
+        },
+        "format_violations": {
+          "responses_with_violations": 2,
+          "denominator": 12,
+          "by_type": {
+            "markdown_fence": 1,
+            "invalid_json": 1
+          }
+        },
+        "latency_seconds": {
+          "denominator": 12
+        },
+        "attempt_latency_seconds": {
+          "denominator": 12
+        },
+        "tokens": {
+          "input_tokens": {
+            "total": 540,
+            "denominator": 12
+          },
+          "output_tokens": {
+            "total": 72,
+            "denominator": 12
+          },
+          "total_tokens": {
+            "total": 612,
+            "denominator": 12
+          }
+        }
+      }
+    },
+    "mock-b": {
+      "fields": {
+        "relevance": {
+          "task_type": "categorical",
+          "counts": {
+            "total": 12,
+            "known_reference": 11,
+            "unknown_reference": 1,
+            "invalid_prediction": 2,
+            "invalid_prediction_known_reference": 1,
+            "invalid_prediction_unknown_reference": 1,
+            "eligible": 10
+          },
+          "metrics": {
+            "exact_agreement": {
+              "value": 0.9,
+              "numerator": 9,
+              "denominator": 10
+            },
+            "cohen_kappa": {
+              "value": 0.0,
+              "numerator": 0.0,
+              "denominator": 0.09999999999999998,
+              "sample_size": 10,
+              "observed_agreement": 0.9,
+              "expected_agreement": 0.9,
+              "undefined_reason": null
+            }
+          },
+          "failure_as_wrong": {
+            "exact_agreement": {
+              "value": 0.8181818181818182,
+              "numerator": 9,
+              "denominator": 11
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "relevant",
+              "unrelated"
+            ],
+            "rows": "reference",
+            "columns": "prediction",
+            "counts": [
+              [
+                9,
+                0
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "denominator": 10
+          }
+        },
+        "severity": {
+          "task_type": "ordinal",
+          "counts": {
+            "total": 12,
+            "known_reference": 10,
+            "unknown_reference": 2,
+            "invalid_prediction": 3,
+            "invalid_prediction_known_reference": 1,
+            "invalid_prediction_unknown_reference": 2,
+            "eligible": 9
+          },
+          "metrics": {
+            "exact_agreement": {
+              "value": 0.8888888888888888,
+              "numerator": 8,
+              "denominator": 9
+            },
+            "cohen_kappa": {
+              "value": 0.8333333333333333,
+              "numerator": 0.5555555555555556,
+              "denominator": 0.6666666666666667,
+              "sample_size": 9,
+              "observed_agreement": 0.8888888888888888,
+              "expected_agreement": 0.3333333333333333,
+              "undefined_reason": null
+            },
+            "predictions_above": {
+              "value": 0.0,
+              "numerator": 0,
+              "denominator": 9
+            },
+            "predictions_below": {
+              "value": 0.1111111111111111,
+              "numerator": 1,
+              "denominator": 9
+            },
+            "differences_at_least_two": {
+              "value": 0.1111111111111111,
+              "numerator": 1,
+              "denominator": 9
+            }
+          },
+          "failure_as_wrong": {
+            "exact_agreement": {
+              "value": 0.8,
+              "numerator": 8,
+              "denominator": 10
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "none",
+              "minor",
+              "major"
+            ],
+            "rows": "reference",
+            "columns": "prediction",
+            "counts": [
+              [
+                2,
+                0,
+                0
+              ],
+              [
+                0,
+                3,
+                0
+              ],
+              [
+                1,
+                0,
+                3
+              ]
+            ],
+            "denominator": 9
+          }
+        },
+        "needs": {
+          "task_type": "multi_label",
+          "counts": {
+            "total": 12,
+            "known_reference": 11,
+            "unknown_reference": 1,
+            "invalid_prediction": 2,
+            "invalid_prediction_known_reference": 1,
+            "invalid_prediction_unknown_reference": 1,
+            "eligible": 10
+          },
+          "metrics": {
+            "exact_set_agreement": {
+              "value": 0.8,
+              "numerator": 8,
+              "denominator": 10
+            },
+            "partial_overlap": {
+              "value": 0.5,
+              "numerator": 5,
+              "denominator": 10
+            },
+            "mean_jaccard": {
+              "value": 0.85,
+              "numerator": 8.5,
+              "denominator": 10
+            },
+            "micro_f1": {
+              "value": 0.8888888888888888,
+              "numerator": 16,
+              "denominator": 18,
+              "sample_size": 10,
+              "true_positive": 8,
+              "false_positive": 0,
+              "false_negative": 2
+            }
+          },
+          "failure_as_wrong": {
+            "exact_set_agreement": {
+              "value": 0.7272727272727273,
+              "numerator": 8,
+              "denominator": 11
+            },
+            "partial_overlap": {
+              "value": 0.45454545454545453,
+              "numerator": 5,
+              "denominator": 11
+            },
+            "mean_jaccard": {
+              "value": 0.7727272727272727,
+              "numerator": 8.5,
+              "denominator": 11
+            },
+            "micro_f1": {
+              "value": 0.7619047619047619,
+              "numerator": 16,
+              "denominator": 21,
+              "sample_size": 11,
+              "failure_error_count": 3
+            }
+          }
+        }
+      },
+      "resources": {
+        "items": 12,
+        "completed": 12,
+        "statuses": {
+          "completed": 12
+        },
+        "format_violations": {
+          "responses_with_violations": 2,
+          "denominator": 12,
+          "by_type": {
+            "invalid_json": 1,
+            "surrounding_text": 1
+          }
+        },
+        "latency_seconds": {
+          "denominator": 12
+        },
+        "attempt_latency_seconds": {
+          "denominator": 12
+        },
+        "tokens": {
+          "input_tokens": {
+            "total": 540,
+            "denominator": 12
+          },
+          "output_tokens": {
+            "total": 75,
+            "denominator": 12
+          },
+          "total_tokens": {
+            "total": 615,
+            "denominator": 12
+          }
+        }
+      }
+    }
+  },
+  "pairwise": [
+    {
+      "left_model_id": "mock-a",
+      "right_model_id": "mock-b",
+      "fields": {
+        "relevance": {
+          "task_type": "categorical",
+          "counts": {
+            "total": 12,
+            "eligible": 9,
+            "invalid_left": 2,
+            "invalid_right": 2,
+            "both_invalid": 1,
+            "either_invalid": 3
+          },
+          "metrics": {
+            "exact_agreement": {
+              "value": 0.8888888888888888,
+              "numerator": 8,
+              "denominator": 9
+            },
+            "cohen_kappa": {
+              "value": 0.0,
+              "numerator": 0.0,
+              "denominator": 0.11111111111111116,
+              "sample_size": 9,
+              "observed_agreement": 0.8888888888888888,
+              "expected_agreement": 0.8888888888888888,
+              "undefined_reason": null
+            }
+          },
+          "failure_as_wrong": {
+            "exact_agreement": {
+              "value": 0.6666666666666666,
+              "numerator": 8,
+              "denominator": 12
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "relevant",
+              "unrelated"
+            ],
+            "rows": "reference",
+            "columns": "prediction",
+            "counts": [
+              [
+                8,
+                0
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "denominator": 9
+          }
+        },
+        "severity": {
+          "task_type": "ordinal",
+          "counts": {
+            "total": 12,
+            "eligible": 8,
+            "invalid_left": 3,
+            "invalid_right": 3,
+            "both_invalid": 2,
+            "either_invalid": 4
+          },
+          "metrics": {
+            "exact_agreement": {
+              "value": 0.875,
+              "numerator": 7,
+              "denominator": 8
+            },
+            "cohen_kappa": {
+              "value": 0.8095238095238095,
+              "numerator": 0.53125,
+              "denominator": 0.65625,
+              "sample_size": 8,
+              "observed_agreement": 0.875,
+              "expected_agreement": 0.34375,
+              "undefined_reason": null
+            },
+            "predictions_above": {
+              "value": 0.0,
+              "numerator": 0,
+              "denominator": 8
+            },
+            "predictions_below": {
+              "value": 0.125,
+              "numerator": 1,
+              "denominator": 8
+            },
+            "differences_at_least_two": {
+              "value": 0.125,
+              "numerator": 1,
+              "denominator": 8
+            }
+          },
+          "failure_as_wrong": {
+            "exact_agreement": {
+              "value": 0.5833333333333334,
+              "numerator": 7,
+              "denominator": 12
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "none",
+              "minor",
+              "major"
+            ],
+            "rows": "reference",
+            "columns": "prediction",
+            "counts": [
+              [
+                2,
+                0,
+                0
+              ],
+              [
+                0,
+                2,
+                0
+              ],
+              [
+                1,
+                0,
+                3
+              ]
+            ],
+            "denominator": 8
+          }
+        },
+        "needs": {
+          "task_type": "multi_label",
+          "counts": {
+            "total": 12,
+            "eligible": 8,
+            "invalid_left": 3,
+            "invalid_right": 2,
+            "both_invalid": 1,
+            "either_invalid": 4
+          },
+          "metrics": {
+            "exact_set_agreement": {
+              "value": 0.75,
+              "numerator": 6,
+              "denominator": 8
+            },
+            "partial_overlap": {
+              "value": 0.5,
+              "numerator": 4,
+              "denominator": 8
+            },
+            "mean_jaccard": {
+              "value": 0.8125,
+              "numerator": 6.5,
+              "denominator": 8
+            },
+            "micro_f1": {
+              "value": 0.8571428571428571,
+              "numerator": 12,
+              "denominator": 14,
+              "sample_size": 8,
+              "true_positive": 6,
+              "false_positive": 0,
+              "false_negative": 2
+            }
+          },
+          "failure_as_wrong": {
+            "exact_set_agreement": {
+              "value": 0.5,
+              "numerator": 6,
+              "denominator": 12
+            },
+            "partial_overlap": {
+              "value": 0.3333333333333333,
+              "numerator": 4,
+              "denominator": 12
+            },
+            "mean_jaccard": {
+              "value": 0.5416666666666666,
+              "numerator": 6.5,
+              "denominator": 12
+            },
+            "micro_f1": {
+              "value": 0.46153846153846156,
+              "numerator": 12,
+              "denominator": 26,
+              "sample_size": 12,
+              "failure_error_count": 12
+            }
+          }
+        }
+      }
+    }
+  ]
+}

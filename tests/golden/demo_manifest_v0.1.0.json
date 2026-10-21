@@ -1,0 +1,320 @@
+{
+  "version": 1,
+  "prompt": "Label the supplied synthetic scenario. Return exactly one JSON object with these fields:\n- \"relevance\": \"relevant\" for disaster response information, otherwise \"unrelated\".\n- \"severity\": \"none\", \"minor\", or \"major\" physical damage.\n- \"needs\": a list containing any explicitly requested resources: \"food\", \"water\", \"shelter\".\nUse an empty list when no resources are requested. Do not include explanations or Markdown.\n",
+  "label_schema": {
+    "relevance": {
+      "type": "categorical",
+      "labels": [
+        "relevant",
+        "unrelated"
+      ]
+    },
+    "severity": {
+      "type": "ordinal",
+      "levels": [
+        "none",
+        "minor",
+        "major"
+      ]
+    },
+    "needs": {
+      "type": "multi_label",
+      "labels": [
+        "food",
+        "water",
+        "shelter"
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": "demo-01",
+      "text": "The fictional town of Pineglass reports a collapsed bridge. Residents request water.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "major",
+        "needs": [
+          "water"
+        ]
+      }
+    },
+    {
+      "id": "demo-02",
+      "text": "A made-up community center has a cracked window and needs food deliveries.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "minor",
+        "needs": [
+          "food"
+        ]
+      }
+    },
+    {
+      "id": "demo-03",
+      "text": "Invented notice: the public library is hosting a chess afternoon.",
+      "labels": {
+        "relevance": "unrelated",
+        "severity": "none",
+        "needs": []
+      }
+    },
+    {
+      "id": "demo-04",
+      "text": "A fictional storm destroyed several roofs. Temporary shelter and water are requested.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "major",
+        "needs": [
+          "shelter",
+          "water"
+        ]
+      }
+    },
+    {
+      "id": "demo-05",
+      "text": "The imaginary Northbank shelter is open; no structural damage is reported.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "none",
+        "needs": []
+      }
+    },
+    {
+      "id": "demo-06",
+      "text": "An invented bakery announces a new cinnamon pastry.",
+      "labels": {
+        "relevance": "unrelated",
+        "severity": "none",
+        "needs": []
+      }
+    },
+    {
+      "id": "demo-07",
+      "text": "The fictional East Ferry warehouse has minor siding damage. Food and water are needed.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "minor",
+        "needs": [
+          "food",
+          "water"
+        ]
+      }
+    },
+    {
+      "id": "demo-08",
+      "text": "A made-up flood washed away a house. Its occupants request shelter.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "major",
+        "needs": [
+          "shelter"
+        ]
+      }
+    },
+    {
+      "id": "demo-09",
+      "text": "Invented bulletin: a fallen branch scratched an empty storage shed.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "minor",
+        "needs": []
+      }
+    },
+    {
+      "id": "demo-10",
+      "text": "An imaginary rescue station asks for food, water, and shelter supplies after a building collapse.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": "major",
+        "needs": [
+          "food",
+          "water",
+          "shelter"
+        ]
+      }
+    },
+    {
+      "id": "demo-11",
+      "text": "Fictional exercise note: the condition of the observation hut could not be established.",
+      "labels": {
+        "relevance": "relevant",
+        "severity": null,
+        "needs": []
+      }
+    },
+    {
+      "id": "demo-12",
+      "text": "Invented fragment with no usable context.",
+      "labels": {
+        "relevance": null,
+        "severity": null,
+        "needs": null
+      }
+    }
+  ],
+  "models": {
+    "mock-a": {
+      "id": "mock-a",
+      "provider": "mock",
+      "model": "canned-a",
+      "parameters": {},
+      "responses": {
+        "demo-01": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"water\"]}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-02": {
+          "text": "```json\n{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": [\"food\"]}\n```",
+          "input_tokens": 45,
+          "output_tokens": 8,
+          "total_tokens": 53
+        },
+        "demo-03": {
+          "text": "{\"relevance\": \"unrelated\", \"severity\": \"none\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-04": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"shelter\", \"water\"]}",
+          "input_tokens": 45,
+          "output_tokens": 7,
+          "total_tokens": 52
+        },
+        "demo-05": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"none\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-06": {
+          "text": "{\"relevance\": \"unrelated\", \"severity\": \"none\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-07": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": [\"food\", \"food\"]}",
+          "input_tokens": 45,
+          "output_tokens": 7,
+          "total_tokens": 52
+        },
+        "demo-08": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"shelter\"]}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-09": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"unknown\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-10": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"food\", \"water\", \"shelter\"]}",
+          "input_tokens": 45,
+          "output_tokens": 8,
+          "total_tokens": 53
+        },
+        "demo-11": {
+          "text": "",
+          "input_tokens": 45,
+          "output_tokens": 0,
+          "total_tokens": 45
+        },
+        "demo-12": {
+          "text": "{\"relevance\": null, \"severity\": null, \"needs\": null}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        }
+      }
+    },
+    "mock-b": {
+      "id": "mock-b",
+      "provider": "mock",
+      "model": "canned-b",
+      "parameters": {},
+      "responses": {
+        "demo-01": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"none\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-02": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": [\"food\"]}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-03": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"none\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-04": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"water\"]}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-05": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"none\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-06": {
+          "text": "{malformed JSON}",
+          "input_tokens": 45,
+          "output_tokens": 2,
+          "total_tokens": 47
+        },
+        "demo-07": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": [\"food\", \"water\"]}",
+          "input_tokens": 45,
+          "output_tokens": 7,
+          "total_tokens": 52
+        },
+        "demo-08": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"shelter\"]}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-09": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": \"minor\", \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-10": {
+          "text": "Here are the labels: {\"relevance\": \"relevant\", \"severity\": \"major\", \"needs\": [\"food\", \"water\", \"shelter\"]}",
+          "input_tokens": 45,
+          "output_tokens": 12,
+          "total_tokens": 57
+        },
+        "demo-11": {
+          "text": "{\"relevance\": \"relevant\", \"severity\": null, \"needs\": []}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        },
+        "demo-12": {
+          "text": "{\"relevance\": null, \"severity\": null, \"needs\": null}",
+          "input_tokens": 45,
+          "output_tokens": 6,
+          "total_tokens": 51
+        }
+      }
+    }
+  },
+  "retry_attempts": 3,
+  "fingerprint": "9db669db7360eab0f101c5473f53884601022ea0b57c2e304f3c65e0ce0b97fe",
+  "created_at": "2026-10-21T16:32:57.635239+00:00"
+}
